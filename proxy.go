@@ -3,7 +3,8 @@ package simproxy
 import (
 	"net"
 	"net/http"
-	"net/http/httputil"
+
+	"github.com/ryotarai/simproxy/httputil"
 )
 
 type Proxy struct {
