@@ -9,9 +9,11 @@ import (
 )
 
 func main() {
-	u, _ := url.Parse("http://google.com")
+	u1, _ := url.Parse("http://127.0.0.1:9000")
+	u2, _ := url.Parse("http://127.0.0.1:9001")
 	backends := []*simproxy.Backend{
-		{URL: u, Weight: 1},
+		{URL: u1, Weight: 1},
+		{URL: u2, Weight: 2},
 	}
 	balancer := simproxy.NewRoundrobinBalancer(backends)
 	proxy := simproxy.NewProxy(balancer)
