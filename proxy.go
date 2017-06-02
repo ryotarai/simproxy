@@ -44,7 +44,7 @@ func (p *Proxy) listener() (net.Listener, error) {
 	return net.Listen("tcp", "127.0.0.1:8080")
 }
 
-func (p *Proxy) director(req *http.Request) {
+func (p *Proxy) director(req *http.Request) (func(), func()) {
 	backend := p.balancer.RetainServer()
 
 	req.URL.Scheme = backend.URL.Scheme
@@ -53,4 +53,10 @@ func (p *Proxy) director(req *http.Request) {
 		// explicitly disable User-Agent so it's not set to default value
 		req.Header.Set("User-Agent", "")
 	}
+
+	afterRoundTrip := func() {
+		p.balancer.ReleaseServer(backend)
+	}
+
+	return nil, afterRoundTrip
 }
