@@ -1,6 +1,7 @@
 package simproxy
 
 type Balancer interface {
-	RetainServer() *Backend
-	ReleaseServer(*Backend)
+	PickBackend() *Backend
+	ReturnBackend(*Backend)
+}
 }

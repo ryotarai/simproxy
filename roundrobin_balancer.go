@@ -35,7 +35,7 @@ func NewRoundrobinBalancer(backends []*Backend) *RoundrobinBalancer {
 	}
 }
 
-func (b *RoundrobinBalancer) RetainServer() *Backend {
+func (b *RoundrobinBalancer) PickBackend() *Backend {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 	backend := b.backendMap[b.counter]
@@ -46,5 +46,6 @@ func (b *RoundrobinBalancer) RetainServer() *Backend {
 	return backend
 }
 
-func (b *RoundrobinBalancer) ReleaseServer(*Backend) {
+func (b *RoundrobinBalancer) ReturnBackend(*Backend) {
+	// nothing
 }

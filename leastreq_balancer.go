@@ -6,21 +6,21 @@ import (
 	"github.com/emirpasic/gods/sets/treeset"
 )
 
-type SetItem struct {
+type LeastreqState struct {
 	Requests int
 	Backend  *Backend
 }
 
 type LeastreqBalancer struct {
-	set           *treeset.Set
-	itemByBackend map[*Backend]*SetItem
-	mutex         *sync.Mutex
+	set            *treeset.Set
+	stateByBackend map[*Backend]*LeastreqState
+	mutex          *sync.Mutex
 }
 
 func NewLeastreqBalancer(backends []*Backend) *LeastreqBalancer {
 	b := &LeastreqBalancer{
-		mutex:         &sync.Mutex{},
-		itemByBackend: map[*Backend]*SetItem{},
+		mutex:          &sync.Mutex{},
+		stateByBackend: map[*Backend]*LeastreqState{},
 	}
 	b.set = treeset.NewWith(b.setComparator)
 
@@ -31,7 +31,7 @@ func NewLeastreqBalancer(backends []*Backend) *LeastreqBalancer {
 	return b
 }
 
-func (b *LeastreqBalancer) RetainServer() *Backend {
+func (b *LeastreqBalancer) PickBackend() *Backend {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
@@ -39,7 +39,7 @@ func (b *LeastreqBalancer) RetainServer() *Backend {
 	if !iter.First() {
 		return nil
 	}
-	item := iter.Value().(*SetItem)
+	item := iter.Value().(*LeastreqState)
 	b.set.Remove(item)
 	item.Requests++
 	b.set.Add(item)
@@ -47,11 +47,11 @@ func (b *LeastreqBalancer) RetainServer() *Backend {
 	return item.Backend
 }
 
-func (b *LeastreqBalancer) ReleaseServer(backend *Backend) {
+func (b *LeastreqBalancer) ReturnBackend(backend *Backend) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
-	item := b.itemByBackend[backend]
+	item := b.stateByBackend[backend]
 	b.set.Remove(item)
 	if item.Requests > 0 {
 		item.Requests--
@@ -63,17 +63,17 @@ func (b *LeastreqBalancer) AddBackend(backend *Backend) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
-	item := &SetItem{
+	item := &LeastreqState{
 		Requests: 0,
 		Backend:  backend,
 	}
 	b.set.Add(item)
-	b.itemByBackend[backend] = item
+	b.stateByBackend[backend] = item
 }
 
 func (balancer *LeastreqBalancer) setComparator(a, b interface{}) int {
-	itemA := a.(*SetItem)
-	itemB := b.(*SetItem)
+	itemA := a.(*LeastreqState)
+	itemB := b.(*LeastreqState)
 
 	if itemA == itemB {
 		return 0
