@@ -8,6 +8,7 @@ package httputil
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -22,17 +23,21 @@ import (
 // flushLoop() goroutine.
 var onExitFlushLoop func()
 
+type LogRecord map[string]string
+
 // ReverseProxy is an HTTP Handler that takes an incoming request and
 // sends it to another server, proxying the response back to the
 // client.
 type ReverseProxy struct {
+	WriteAccessLog func(LogRecord)
+
 	// Director must be a function which modifies
 	// the request into a new request to be sent
 	// using Transport. Its response is then copied
 	// back to the original client unmodified.
 	// Director must not access the provided Request
 	// after returning.
-	Director func(*http.Request) func()
+	Director func(*http.Request, LogRecord) func()
 
 	// The transport used to perform proxy requests.
 	// If nil, http.DefaultTransport is used.
@@ -120,6 +125,21 @@ var hopHeaders = []string{
 }
 
 func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	lr := LogRecord{}
+	lr["path"] = req.URL.Path
+	lr["host"] = req.URL.Host
+
+	start := time.Now()
+	p.serveHTTP(rw, req, lr)
+	end := time.Now()
+
+	lr["time"] = end.Format(time.RFC3339Nano)
+	lr["reqtime_nsec"] = fmt.Sprintf("%d", end.UnixNano()-start.UnixNano())
+
+	p.WriteAccessLog(lr)
+}
+
+func (p *ReverseProxy) serveHTTP(rw http.ResponseWriter, req *http.Request, logRecord LogRecord) {
 	transport := p.Transport
 	if transport == nil {
 		transport = http.DefaultTransport
@@ -145,7 +165,7 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		outreq.Body = nil // Issue 16036: nil Body for http.Transport retries
 	}
 
-	afterRoundTrip := p.Director(outreq)
+	afterRoundTrip := p.Director(outreq, logRecord)
 	outreq.Close = false
 
 	// We are modifying the same underlying map from req (shallow
