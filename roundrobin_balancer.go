@@ -6,22 +6,22 @@ import (
 
 type RoundrobinBalancer struct {
 	mutex       sync.Mutex
-	counter     uint64
-	totalWeight uint64
-	backendMap  map[uint64]*Backend
+	counter     int
+	totalWeight int
+	backendMap  map[int]*Backend
 	Backends    []*Backend
 }
 
 func NewRoundrobinBalancer(backends []*Backend) *RoundrobinBalancer {
-	totalWeight := uint64(0)
+	totalWeight := 0
 	for _, b := range backends {
 		totalWeight += b.Weight
 	}
 
-	backendMap := map[uint64]*Backend{}
-	i := uint64(0)
+	backendMap := map[int]*Backend{}
+	i := 0
 	for _, b := range backends {
-		for j := uint64(0); j < b.Weight; j++ {
+		for j := 0; j < b.Weight; j++ {
 			backendMap[i] = b
 			i++
 		}

@@ -6,5 +6,5 @@ import (
 
 type Backend struct {
 	URL    *url.URL
-	Weight uint64
+	Weight int
 }
