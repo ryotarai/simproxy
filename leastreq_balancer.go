@@ -33,16 +33,12 @@ type LeastreqBalancer struct {
 	mutex          *sync.Mutex
 }
 
-func NewLeastreqBalancer(backends []*Backend) *LeastreqBalancer {
+func NewLeastreqBalancer() *LeastreqBalancer {
 	b := &LeastreqBalancer{
 		mutex:          &sync.Mutex{},
 		stateByBackend: map[*Backend]*LeastreqState{},
 	}
 	b.set = treeset.NewWith(leastreqStateComparator)
-
-	for _, backend := range backends {
-		b.AddBackend(backend)
-	}
 
 	return b
 }
@@ -85,4 +81,13 @@ func (b *LeastreqBalancer) AddBackend(backend *Backend) {
 	}
 	b.set.Add(item)
 	b.stateByBackend[backend] = item
+}
+
+func (b *LeastreqBalancer) RemoveBackend(backend *Backend) {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	item := b.stateByBackend[backend]
+	b.set.Remove(item)
+	delete(b.stateByBackend, backend)
 }

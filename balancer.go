@@ -5,16 +5,16 @@ import (
 )
 
 type Balancer interface {
+	AddBackend(*Backend)
+	RemoveBackend(*Backend)
 	PickBackend() *Backend
 	ReturnBackend(*Backend)
 }
 
-func NewBalancer(method string, backends []*Backend) (Balancer, error) {
+func NewBalancer(method string) (Balancer, error) {
 	switch method {
-	case "roundrobin":
-		return NewRoundrobinBalancer(backends), nil
 	case "leastreq":
-		return NewLeastreqBalancer(backends), nil
+		return NewLeastreqBalancer(), nil
 	}
 	return nil, fmt.Errorf("%s method is not vailid", method)
 }

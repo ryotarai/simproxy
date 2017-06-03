@@ -39,6 +39,7 @@ func (p *Proxy) Serve(listen string) error {
 func (p *Proxy) director(req *http.Request) (func(), func()) {
 	backend := p.balancer.PickBackend()
 	target := backend.URL
+	targetQuery := target.RawQuery
 
 	req.URL.Scheme = target.Scheme
 	req.URL.Host = target.Host

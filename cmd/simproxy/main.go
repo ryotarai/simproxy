@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/url"
 
 	"os"
 
@@ -21,18 +22,42 @@ func main() {
 		log.Fatal(err)
 	}
 
-	backends := []*simproxy.Backend{}
+	balancer, err := simproxy.NewBalancer(*config.BalancingMethod)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	hcPath, err := url.Parse(*config.Healthcheck.Path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	for _, b := range config.Backends {
-		c, err := b.Backend()
+		url, err := url.Parse(*b.URL)
 		if err != nil {
 			log.Fatal(err)
 		}
-		backends = append(backends, c)
-	}
 
-	balancer, err := simproxy.NewBalancer(*config.BalancingMethod, backends)
-	if err != nil {
-		log.Fatal(err)
+		c := &simproxy.Backend{
+			URL:            url,
+			HealthcheckURL: url.ResolveReference(hcPath),
+			Weight:         *b.Weight,
+		}
+
+		if err != nil {
+			log.Fatal(err)
+		}
+		healthchecker := &simproxy.Healthchecker{
+			Backend:   c,
+			Balancer:  balancer,
+			Interval:  *config.Healthcheck.Interval,
+			FallCount: *config.Healthcheck.FallCount,
+			RiseCount: *config.Healthcheck.RiseCount,
+		}
+		err = healthchecker.Start()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	proxy := simproxy.NewProxy(balancer)

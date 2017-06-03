@@ -3,32 +3,28 @@ package main
 import (
 	"io/ioutil"
 
-	"net/url"
+	"time"
 
-	"github.com/ryotarai/simproxy"
 	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
-	Listen          *string          `yaml:"listen"`
-	Backends        []*BackendConfig `yaml:"backends"`
-	BalancingMethod *string          `yaml:"balancing_method"`
+	Listen          *string            `yaml:"listen"`
+	Backends        []*BackendConfig   `yaml:"backends"`
+	BalancingMethod *string            `yaml:"balancing_method"`
+	Healthcheck     *HealthcheckConfig `yaml:"healthcheck"`
+}
+
+type HealthcheckConfig struct {
+	Path      *string        `yaml:"path"`
+	Interval  *time.Duration `yaml:"interval"`
+	FallCount *int           `yaml:"fall_count"`
+	RiseCount *int           `yaml:"rise_count"`
 }
 
 type BackendConfig struct {
 	URL    *string `yaml:"url"`
 	Weight *int    `yaml:"weight"`
-}
-
-func (b *BackendConfig) Backend() (*simproxy.Backend, error) {
-	url, err := url.Parse(*b.URL)
-	if err != nil {
-		return nil, err
-	}
-	return &simproxy.Backend{
-		URL:    url,
-		Weight: *b.Weight,
-	}, nil
 }
 
 func LoadConfigFromYAML(path string) (*Config, error) {

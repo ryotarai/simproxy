@@ -5,6 +5,7 @@ import (
 )
 
 type Backend struct {
-	URL    *url.URL
-	Weight int
+	URL            *url.URL
+	HealthcheckURL *url.URL
+	Weight         int
 }
