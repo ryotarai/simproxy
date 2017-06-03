@@ -1,8 +1,14 @@
 package simproxy
 
 import (
+	"context"
+	"log"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/ryotarai/simproxy/httputil"
 )
@@ -29,9 +35,19 @@ func (p *Proxy) Serve(listen string) error {
 	if err != nil {
 		return err
 	}
-	defer l.Close()
+	go func() {
+		defer l.Close()
+		server.Serve(l)
+	}()
 
-	server.Serve(l)
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGTERM)
+	<-sigCh
+
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatal(err)
+	}
 
 	return nil
 }
