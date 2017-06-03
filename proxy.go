@@ -17,45 +17,44 @@ func NewProxy(balancer Balancer) *Proxy {
 	}
 }
 
-func (p *Proxy) Serve() error {
-	transport := &Transport{
-		Parent: http.DefaultTransport,
-	}
+func (p *Proxy) Serve(listen string) error {
 	handler := &httputil.ReverseProxy{
-		Director:  p.director,
-		Transport: transport,
+		Director: p.director,
 	}
 	server := http.Server{
 		Handler: handler,
 	}
 
-	l, err := p.listener()
+	l, err := net.Listen("tcp", listen)
 	if err != nil {
 		return err
 	}
-
 	defer l.Close()
+
 	server.Serve(l)
 
 	return nil
 }
 
-func (p *Proxy) listener() (net.Listener, error) {
-	return net.Listen("tcp", "127.0.0.1:8080")
-}
-
 func (p *Proxy) director(req *http.Request) (func(), func()) {
-	backend := p.balancer.RetainServer()
+	backend := p.balancer.PickBackend()
+	target := backend.URL
 
-	req.URL.Scheme = backend.URL.Scheme
-	req.URL.Host = backend.URL.Host
+	req.URL.Scheme = target.Scheme
+	req.URL.Host = target.Host
+	req.URL.Path = httputil.SingleJoiningSlash(target.Path, req.URL.Path)
+	if targetQuery == "" || req.URL.RawQuery == "" {
+		req.URL.RawQuery = targetQuery + req.URL.RawQuery
+	} else {
+		req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
+	}
 	if _, ok := req.Header["User-Agent"]; !ok {
 		// explicitly disable User-Agent so it's not set to default value
 		req.Header.Set("User-Agent", "")
 	}
 
 	afterRoundTrip := func() {
-		p.balancer.ReleaseServer(backend)
+		p.balancer.ReturnBackend(backend)
 	}
 
 	return nil, afterRoundTrip
