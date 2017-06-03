@@ -12,6 +12,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -31,7 +32,7 @@ type ReverseProxy struct {
 	// back to the original client unmodified.
 	// Director must not access the provided Request
 	// after returning.
-	Director func(*http.Request) (func(), func())
+	Director func(*http.Request) func()
 
 	// The transport used to perform proxy requests.
 	// If nil, http.DefaultTransport is used.
@@ -67,7 +68,24 @@ type BufferPool interface {
 	Put([]byte)
 }
 
-func SingleJoiningSlash(a, b string) string {
+func StandardDirector(req *http.Request, target *url.URL) {
+	targetQuery := target.RawQuery
+
+	req.URL.Scheme = target.Scheme
+	req.URL.Host = target.Host
+	req.URL.Path = singleJoiningSlash(target.Path, req.URL.Path)
+	if targetQuery == "" || req.URL.RawQuery == "" {
+		req.URL.RawQuery = targetQuery + req.URL.RawQuery
+	} else {
+		req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
+	}
+	if _, ok := req.Header["User-Agent"]; !ok {
+		// explicitly disable User-Agent so it's not set to default value
+		req.Header.Set("User-Agent", "")
+	}
+}
+
+func singleJoiningSlash(a, b string) string {
 	aslash := strings.HasSuffix(a, "/")
 	bslash := strings.HasPrefix(b, "/")
 	switch {
@@ -127,7 +145,7 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		outreq.Body = nil // Issue 16036: nil Body for http.Transport retries
 	}
 
-	beforeRoundTrip, afterRoundTrip := p.Director(outreq)
+	afterRoundTrip := p.Director(outreq)
 	outreq.Close = false
 
 	// We are modifying the same underlying map from req (shallow
@@ -173,13 +191,9 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		outreq.Header.Set("X-Forwarded-For", clientIP)
 	}
 
-	if beforeRoundTrip != nil {
-		beforeRoundTrip()
-	}
 	res, err := transport.RoundTrip(outreq)
-	if afterRoundTrip != nil {
-		afterRoundTrip()
-	}
+	afterRoundTrip()
+
 	if err != nil {
 		p.logf("http: proxy error: %v", err)
 		rw.WriteHeader(http.StatusBadGateway)
