@@ -11,6 +11,22 @@ type LeastreqState struct {
 	Backend  *Backend
 }
 
+func leastreqStateComparator(a, b interface{}) int {
+	itemA := a.(*LeastreqState)
+	itemB := b.(*LeastreqState)
+
+	if itemA == itemB {
+		return 0
+	}
+
+	delta := float64(itemA.Requests)/float64(itemA.Backend.Weight) -
+		float64(itemB.Requests)/float64(itemB.Backend.Weight)
+	if delta < 0.0 {
+		return -1
+	}
+	return 1
+}
+
 type LeastreqBalancer struct {
 	set            *treeset.Set
 	stateByBackend map[*Backend]*LeastreqState
@@ -22,7 +38,7 @@ func NewLeastreqBalancer(backends []*Backend) *LeastreqBalancer {
 		mutex:          &sync.Mutex{},
 		stateByBackend: map[*Backend]*LeastreqState{},
 	}
-	b.set = treeset.NewWith(b.setComparator)
+	b.set = treeset.NewWith(leastreqStateComparator)
 
 	for _, backend := range backends {
 		b.AddBackend(backend)
@@ -69,20 +85,4 @@ func (b *LeastreqBalancer) AddBackend(backend *Backend) {
 	}
 	b.set.Add(item)
 	b.stateByBackend[backend] = item
-}
-
-func (balancer *LeastreqBalancer) setComparator(a, b interface{}) int {
-	itemA := a.(*LeastreqState)
-	itemB := b.(*LeastreqState)
-
-	if itemA == itemB {
-		return 0
-	}
-
-	delta := float64(itemA.Requests)/float64(itemA.Backend.Weight) -
-		float64(itemB.Requests)/float64(itemB.Backend.Weight)
-	if delta < 0.0 {
-		return -1
-	}
-	return 1
 }
