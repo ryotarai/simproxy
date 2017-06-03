@@ -1,0 +1,7 @@
+listen: '127.0.0.1:8080'
+backends:
+- url: 'http://127.0.0.1:9000'
+  weight: 1
+- url: 'http://127.0.0.1:9001'
+  weight: 2
+balancing_method: 'leastreq'

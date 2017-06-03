@@ -3,21 +3,40 @@ package main
 import (
 	"log"
 
-	"net/url"
+	"os"
 
 	"github.com/ryotarai/simproxy"
 )
 
 func main() {
-	u1, _ := url.Parse("http://127.0.0.1:9000")
-	u2, _ := url.Parse("http://127.0.0.1:9001")
-	backends := []*simproxy.Backend{
-		{URL: u1, Weight: 1},
-		{URL: u2, Weight: 2},
+	options := CommandLineOptions{}
+	fs := setupFlagSet(os.Args[0], &options)
+	err := fs.Parse(os.Args[1:])
+	if err != nil {
+		log.Fatal(err)
 	}
-	balancer := simproxy.NewRoundrobinBalancer(backends)
+
+	config, err := LoadConfigFromYAML(options.Config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	backends := []*simproxy.Backend{}
+	for _, b := range config.Backends {
+		c, err := b.Backend()
+		if err != nil {
+			log.Fatal(err)
+		}
+		backends = append(backends, c)
+	}
+
+	balancer, err := simproxy.NewBalancer(*config.BalancingMethod, backends)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	proxy := simproxy.NewProxy(balancer)
-	err := proxy.Serve()
+	err = proxy.Serve(*config.Listen)
 	if err != nil {
 		log.Fatal(err)
 	}
