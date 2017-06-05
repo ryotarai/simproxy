@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ryotarai/simproxy/httputil"
+	"github.com/ryotarai/simproxy/handler"
 )
 
 type Proxy struct {
@@ -24,7 +24,7 @@ func NewProxy(balancer Balancer) *Proxy {
 }
 
 func (p *Proxy) Serve(listen string) error {
-	handler := &httputil.ReverseProxy{
+	handler := &handler.ReverseProxy{
 		AccessLogger: p,
 		Director:     p.director,
 	}
@@ -58,14 +58,14 @@ func (p *Proxy) director(req *http.Request) (func(), string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	httputil.StandardDirector(req, backend.URL)
+	handler.StandardDirector(req, backend.URL)
 
 	return func() {
 		p.balancer.ReturnBackend(backend)
 	}, backend.URL.String(), nil
 }
 
-func (p *Proxy) Log(r httputil.LogRecord) error {
+func (p *Proxy) Log(r handler.LogRecord) error {
 	log.Println(r)
 	return nil
 }
