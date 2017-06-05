@@ -1,10 +1,11 @@
 listen: '127.0.0.1:8080'
 balancing_method: 'leastreq'
+access_log: '/dev/stdout'
 healthcheck:
   path: '/'
   interval: '1s'
-  rise_count: 5
-  fall_count: 5
+  rise_count: 2
+  fall_count: 2
 backends:
 - url: 'http://127.0.0.1:9000'
   weight: 1

@@ -25,19 +25,24 @@ var onExitFlushLoop func()
 
 type LogRecord map[string]string
 
+type AccessLogger interface {
+	Log(LogRecord) error
+}
+
 // ReverseProxy is an HTTP Handler that takes an incoming request and
 // sends it to another server, proxying the response back to the
 // client.
 type ReverseProxy struct {
-	WriteAccessLog func(LogRecord)
-
+	AccessLogger AccessLogger
 	// Director must be a function which modifies
 	// the request into a new request to be sent
 	// using Transport. Its response is then copied
 	// back to the original client unmodified.
 	// Director must not access the provided Request
 	// after returning.
-	Director func(*http.Request, LogRecord) func()
+	//
+	// This returns funcAfterRoundTrip, backend name and error
+	Director func(*http.Request) (func(), string, error)
 
 	// The transport used to perform proxy requests.
 	// If nil, http.DefaultTransport is used.
@@ -125,18 +130,22 @@ var hopHeaders = []string{
 }
 
 func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	lr := LogRecord{}
-	lr["path"] = req.URL.Path
-	lr["host"] = req.URL.Host
+	record := LogRecord{}
+	logRW := wrapLogResponseWriter(rw)
 
 	start := time.Now()
-	p.serveHTTP(rw, req, lr)
+	p.serveHTTP(logRW, req, record)
 	end := time.Now()
 
-	lr["time"] = end.Format(time.RFC3339Nano)
-	lr["reqtime_nsec"] = fmt.Sprintf("%d", end.UnixNano()-start.UnixNano())
+	record["time"] = end.Format(time.RFC3339)
+	record["time_nsec"] = fmt.Sprintf("%d", end.UnixNano())
+	record["reqtime_nsec"] = fmt.Sprintf("%d", end.UnixNano()-start.UnixNano())
+	record["status"] = fmt.Sprintf("%d", logRW.Status())
+	record["size"] = fmt.Sprintf("%d", logRW.Size())
 
-	p.WriteAccessLog(lr)
+	if p.AccessLogger != nil {
+		p.AccessLogger.Log(record)
+	}
 }
 
 func (p *ReverseProxy) serveHTTP(rw http.ResponseWriter, req *http.Request, logRecord LogRecord) {
@@ -165,7 +174,14 @@ func (p *ReverseProxy) serveHTTP(rw http.ResponseWriter, req *http.Request, logR
 		outreq.Body = nil // Issue 16036: nil Body for http.Transport retries
 	}
 
-	afterRoundTrip := p.Director(outreq, logRecord)
+	afterRoundTrip, backendName, err := p.Director(outreq)
+	if err != nil {
+		p.logf("http: proxy error: %v", err)
+		rw.WriteHeader(http.StatusBadGateway)
+		return
+	}
+	logRecord["backend"] = backendName
+
 	outreq.Close = false
 
 	// We are modifying the same underlying map from req (shallow

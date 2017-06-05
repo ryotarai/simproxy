@@ -7,7 +7,7 @@ import (
 type Balancer interface {
 	AddBackend(*Backend)
 	RemoveBackend(*Backend)
-	PickBackend() *Backend
+	PickBackend() (*Backend, error)
 	ReturnBackend(*Backend)
 }
 

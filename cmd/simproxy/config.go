@@ -13,6 +13,7 @@ type Config struct {
 	Backends        []*BackendConfig   `yaml:"backends"`
 	BalancingMethod *string            `yaml:"balancing_method"`
 	Healthcheck     *HealthcheckConfig `yaml:"healthcheck"`
+	AccessLog       *string            `yaml:"access_log"`
 }
 
 type HealthcheckConfig struct {

@@ -2,14 +2,11 @@ package simproxy
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
-	"sort"
-	"strings"
 	"syscall"
 	"time"
 
@@ -28,8 +25,8 @@ func NewProxy(balancer Balancer) *Proxy {
 
 func (p *Proxy) Serve(listen string) error {
 	handler := &httputil.ReverseProxy{
-		Director:       p.director,
-		WriteAccessLog: p.writeAccessLog,
+		AccessLogger: p,
+		Director:     p.director,
 	}
 	server := http.Server{
 		Handler: handler,
@@ -56,27 +53,19 @@ func (p *Proxy) Serve(listen string) error {
 	return nil
 }
 
-func (p *Proxy) director(req *http.Request, lr httputil.LogRecord) func() {
-	backend := p.balancer.PickBackend()
-	lr["backend"] = backend.URL.String()
+func (p *Proxy) director(req *http.Request) (func(), string, error) {
+	backend, err := p.balancer.PickBackend()
+	if err != nil {
+		return nil, "", err
+	}
 	httputil.StandardDirector(req, backend.URL)
 
 	return func() {
 		p.balancer.ReturnBackend(backend)
-	}
+	}, backend.URL.String(), nil
 }
 
-func (p *Proxy) writeAccessLog(lr httputil.LogRecord) {
-	keys := []string{}
-	for k := range lr {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	fields := []string{}
-	for _, k := range keys {
-		fields = append(fields, fmt.Sprintf("%s:%s", k, lr[k]))
-	}
-	line := strings.Join(fields, "\t")
-
-	log.Println(line)
+func (p *Proxy) Log(r httputil.LogRecord) error {
+	log.Println(r)
+	return nil
 }

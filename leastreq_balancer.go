@@ -3,6 +3,8 @@ package simproxy
 import (
 	"sync"
 
+	"errors"
+
 	"github.com/emirpasic/gods/sets/treeset"
 )
 
@@ -43,20 +45,24 @@ func NewLeastreqBalancer() *LeastreqBalancer {
 	return b
 }
 
-func (b *LeastreqBalancer) PickBackend() *Backend {
+func (b *LeastreqBalancer) PickBackend() (*Backend, error) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
+	if b.set.Empty() {
+		return nil, errors.New("no backend is available")
+	}
+
 	iter := b.set.Iterator()
 	if !iter.First() {
-		return nil
+		return nil, nil
 	}
 	item := iter.Value().(*LeastreqState)
 	b.set.Remove(item)
 	item.Requests++
 	b.set.Add(item)
 
-	return item.Backend
+	return item.Backend, nil
 }
 
 func (b *LeastreqBalancer) ReturnBackend(backend *Backend) {
