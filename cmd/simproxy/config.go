@@ -5,27 +5,28 @@ import (
 
 	"time"
 
+	"gopkg.in/go-playground/validator.v9"
 	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
-	Listen          *string            `yaml:"listen"`
-	Backends        []*BackendConfig   `yaml:"backends"`
-	BalancingMethod *string            `yaml:"balancing_method"`
-	Healthcheck     *HealthcheckConfig `yaml:"healthcheck"`
-	AccessLog       *string            `yaml:"access_log"`
+	Listen          *string            `yaml:"listen" validate:"required"`
+	Backends        []*BackendConfig   `yaml:"backends" validate:"required,dive"`
+	BalancingMethod *string            `yaml:"balancing_method" validate:"required"`
+	Healthcheck     *HealthcheckConfig `yaml:"healthcheck" validate:"required,dive"`
+	AccessLog       *string            `yaml:"access_log" validate:"required"`
 }
 
 type HealthcheckConfig struct {
-	Path      *string        `yaml:"path"`
-	Interval  *time.Duration `yaml:"interval"`
-	FallCount *int           `yaml:"fall_count"`
-	RiseCount *int           `yaml:"rise_count"`
+	Path      *string        `yaml:"path" validate:"required"`
+	Interval  *time.Duration `yaml:"interval" validate:"required"`
+	FallCount *int           `yaml:"fall_count" validate:"required"`
+	RiseCount *int           `yaml:"rise_count" validate:"required"`
 }
 
 type BackendConfig struct {
-	URL    *string `yaml:"url"`
-	Weight *int    `yaml:"weight"`
+	URL    *string `yaml:"url" validate:"required"`
+	Weight *int    `yaml:"weight" validate:"required"`
 }
 
 func LoadConfigFromYAML(path string) (*Config, error) {
@@ -41,4 +42,10 @@ func LoadConfigFromYAML(path string) (*Config, error) {
 	}
 
 	return c, nil
+}
+
+func (c *Config) Validate() error {
+	v := validator.New()
+	err := v.Struct(c)
+	return err
 }

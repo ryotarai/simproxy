@@ -22,6 +22,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	err = config.Validate()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	balancer, err := simproxy.NewBalancer(*config.BalancingMethod)
 	if err != nil {
 		log.Fatal(err)
