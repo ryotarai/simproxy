@@ -29,20 +29,26 @@ type AccessLogger interface {
 	Log(LogRecord) error
 }
 
+type Backend interface {
+	GetURL() *url.URL
+}
+
 // ReverseProxy is an HTTP Handler that takes an incoming request and
 // sends it to another server, proxying the response back to the
 // client.
 type ReverseProxy struct {
 	AccessLogger AccessLogger
+
+	PickBackend    func() (Backend, error)
+	AfterRoundTrip func(Backend)
+
 	// Director must be a function which modifies
 	// the request into a new request to be sent
 	// using Transport. Its response is then copied
 	// back to the original client unmodified.
 	// Director must not access the provided Request
 	// after returning.
-	//
-	// This returns funcAfterRoundTrip, backend name and error
-	Director func(*http.Request) (func(), string, error)
+	Director func(*http.Request, Backend)
 
 	// The transport used to perform proxy requests.
 	// If nil, http.DefaultTransport is used.
@@ -174,13 +180,15 @@ func (p *ReverseProxy) serveHTTP(rw http.ResponseWriter, req *http.Request, logR
 		outreq.Body = nil // Issue 16036: nil Body for http.Transport retries
 	}
 
-	afterRoundTrip, backendName, err := p.Director(outreq)
+	backend, err := p.PickBackend()
 	if err != nil {
 		p.logf("http: proxy error: %v", err)
 		rw.WriteHeader(http.StatusBadGateway)
 		return
 	}
-	logRecord["backend"] = backendName
+
+	p.Director(outreq, backend)
+	logRecord["backend"] = backend.GetURL().String()
 
 	outreq.Close = false
 
@@ -228,7 +236,7 @@ func (p *ReverseProxy) serveHTTP(rw http.ResponseWriter, req *http.Request, logR
 	}
 
 	res, err := transport.RoundTrip(outreq)
-	afterRoundTrip()
+	p.AfterRoundTrip(backend)
 
 	if err != nil {
 		p.logf("http: proxy error: %v", err)
