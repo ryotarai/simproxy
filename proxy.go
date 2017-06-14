@@ -16,18 +16,20 @@ import (
 )
 
 type Proxy struct {
-	balancer Balancer
+	balancer     Balancer
+	accessLogger handler.AccessLogger
 }
 
-func NewProxy(balancer Balancer) *Proxy {
+func NewProxy(balancer Balancer, l handler.AccessLogger) *Proxy {
 	return &Proxy{
-		balancer: balancer,
+		balancer:     balancer,
+		accessLogger: l,
 	}
 }
 
 func (p *Proxy) Serve(listen string) error {
 	handler := &handler.ReverseProxy{
-		AccessLogger:   p,
+		AccessLogger:   p.accessLogger,
 		Director:       p.director,
 		PickBackend:    p.pickBackend,
 		AfterRoundTrip: p.afterRoundTrip,

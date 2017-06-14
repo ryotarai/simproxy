@@ -1,6 +1,9 @@
 listen: '127.0.0.1:8080'
 balancing_method: 'leastreq'
-access_log: '/dev/stdout'
+access_log:
+  format: 'ltsv'
+  path: '/dev/stdout'
+  fields: ['time', 'status', 'size', 'reqtime_nsec', 'backend']
 healthcheck:
   path: '/'
   interval: '1s'

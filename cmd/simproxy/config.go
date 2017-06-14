@@ -14,7 +14,7 @@ type Config struct {
 	Backends        []*BackendConfig   `yaml:"backends" validate:"required,dive"`
 	BalancingMethod *string            `yaml:"balancing_method" validate:"required"`
 	Healthcheck     *HealthcheckConfig `yaml:"healthcheck" validate:"required,dive"`
-	AccessLog       *string            `yaml:"access_log" validate:"required"`
+	AccessLog       *AccessLogConfig   `yaml:"access_log" validate:"required,dive"`
 }
 
 type HealthcheckConfig struct {
@@ -27,6 +27,12 @@ type HealthcheckConfig struct {
 type BackendConfig struct {
 	URL    *string `yaml:"url" validate:"required"`
 	Weight *int    `yaml:"weight" validate:"required"`
+}
+
+type AccessLogConfig struct {
+	Format *string  `yaml:"format" validate:"required"`
+	Path   *string  `yaml:"path" validate:"required"`
+	Fields []string `yaml:"fields" validate:"required"`
 }
 
 func LoadConfigFromYAML(path string) (*Config, error) {

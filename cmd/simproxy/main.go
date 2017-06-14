@@ -65,7 +65,18 @@ func main() {
 		}
 	}
 
-	proxy := simproxy.NewProxy(balancer)
+	f, err := os.Open(*config.AccessLog.Path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	logger, err := simproxy.NewAccessLogger(*config.AccessLog.Format, f, config.AccessLog.Fields)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	proxy := simproxy.NewProxy(balancer, logger)
 	err = proxy.Serve(*config.Listen)
 	if err != nil {
 		log.Fatal(err)
