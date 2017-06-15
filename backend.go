@@ -10,6 +10,7 @@ type Backend struct {
 	Weight         int
 }
 
+// GetURL satisfies handler.Backend interface
 func (b *Backend) GetURL() *url.URL {
 	return b.URL
 }

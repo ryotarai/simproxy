@@ -8,6 +8,7 @@ import (
 )
 
 type Healthchecker struct {
+	State     *HealthStateStore
 	Logger    *log.Logger
 	Backend   *Backend
 	Balancer  Balancer
@@ -27,10 +28,11 @@ func (c *Healthchecker) Start() error {
 		Timeout:   c.Interval,
 	}
 
-	c.Logger.Printf("[healthchecker] [%s] start", c.Backend.HealthcheckURL)
+	c.logf("[healthchecker] [%s] start", c.Backend.HealthcheckURL)
 
-	c.successCount = c.RiseCount - 1
-	c.check() // sync
+	if c.State.State(c.Backend.URL.String()) == HEALTH_STATE_HEALTHY {
+		c.addToBalancer()
+	}
 
 	go func() {
 		for {
@@ -76,26 +78,43 @@ func (c *Healthchecker) onSuccess(msg string) {
 	}
 
 	c.successCount++
-	c.Logger.Printf("[healthchecker] [%s] success %d/%d: %s", c.Backend.HealthcheckURL, c.successCount, c.RiseCount, msg)
+	c.logf("success %d/%d: %s", c.successCount, c.RiseCount, msg)
 	if c.RiseCount <= c.successCount {
-		c.Logger.Printf("[healthchecker] [%s] adding to balancer", c.Backend.HealthcheckURL)
-		c.Balancer.AddBackend(c.Backend)
-		c.active = true
+		err := c.State.Mark(c.Backend.URL.String(), HEALTH_STATE_HEALTHY)
+		if err != nil {
+			c.logf("error: %s", err)
+		}
+		c.addToBalancer()
 	}
+}
+
+func (c *Healthchecker) addToBalancer() {
+	c.logf("adding to balancer")
+	c.Balancer.AddBackend(c.Backend)
+	c.active = true
 }
 
 func (c *Healthchecker) onError(msg string) {
 	if !c.active {
-		c.Logger.Printf("[healthchecker] [%s] error: %s", c.Backend.HealthcheckURL, msg)
+		c.logf("error: %s", msg)
 		c.successCount = 0
 		return
 	}
 
 	c.errorCount++
-	c.Logger.Printf("[healthchecker] [%s] error %d/%d: %s", c.Backend.HealthcheckURL, c.errorCount, c.FallCount, msg)
+	c.logf("error %d/%d: %s", c.errorCount, c.FallCount, msg)
 	if c.FallCount <= c.errorCount {
-		c.Logger.Printf("[healthchecker] [%s] removing from balancer", c.Backend.HealthcheckURL)
-		c.Balancer.RemoveBackend(c.Backend)
-		c.active = false
+		c.State.Mark(c.Backend.URL.String(), HEALTH_STATE_DEAD)
+		c.removeFromBalancer()
 	}
+}
+
+func (c *Healthchecker) removeFromBalancer() {
+	c.logf("removing from balancer")
+	c.Balancer.RemoveBackend(c.Backend)
+	c.active = false
+}
+
+func (c *Healthchecker) logf(format string, args ...interface{}) {
+	c.Logger.Printf(fmt.Sprintf("[healthchecker] [%s] ", c.Backend.HealthcheckURL)+format, args...)
 }

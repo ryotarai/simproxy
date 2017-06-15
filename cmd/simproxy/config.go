@@ -25,6 +25,7 @@ type HealthcheckConfig struct {
 	Interval  *time.Duration `yaml:"interval" validate:"required"`
 	FallCount *int           `yaml:"fall_count" validate:"required"`
 	RiseCount *int           `yaml:"rise_count" validate:"required"`
+	StateFile *string        `yaml:"state_file" validate:"required"`
 }
 
 type BackendConfig struct {

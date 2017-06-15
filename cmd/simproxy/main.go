@@ -50,16 +50,25 @@ func start(config *Config) {
 		errorLogger.Fatal(err)
 	}
 
+	healthStore := simproxy.NewHealthStateStore(*config.Healthcheck.StateFile)
+	err = healthStore.Load()
+	if err != nil {
+		errorLogger.Fatal(err)
+	}
+
 	hcPath, err := url.Parse(*config.Healthcheck.Path)
 	if err != nil {
 		errorLogger.Fatal(err)
 	}
 
+	backendStrURLs := []string{}
 	for _, b := range config.Backends {
 		url, err := url.Parse(*b.URL)
 		if err != nil {
 			errorLogger.Fatal(err)
 		}
+
+		backendStrURLs = append(backendStrURLs, url.String())
 
 		b2 := &simproxy.Backend{
 			URL:            url,
@@ -68,6 +77,7 @@ func start(config *Config) {
 		}
 
 		healthchecker := &simproxy.Healthchecker{
+			State:     healthStore,
 			Logger:    errorLogger,
 			Backend:   b2,
 			Balancer:  balancer,
@@ -79,6 +89,11 @@ func start(config *Config) {
 		if err != nil {
 			errorLogger.Fatal(err)
 		}
+	}
+
+	err = healthStore.Cleanup(backendStrURLs)
+	if err != nil {
+		errorLogger.Fatal(err)
 	}
 
 	f, err := os.Open(*config.AccessLog.Path)

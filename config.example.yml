@@ -12,6 +12,7 @@ healthcheck:
   interval: '1s'
   rise_count: 2
   fall_count: 2
+  state_file: './tmp/health_state.tsv'
 backends:
 - url: 'http://127.0.0.1:9000'
   weight: 1
