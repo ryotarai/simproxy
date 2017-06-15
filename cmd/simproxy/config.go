@@ -15,6 +15,8 @@ type Config struct {
 	BalancingMethod *string            `yaml:"balancing_method" validate:"required"`
 	Healthcheck     *HealthcheckConfig `yaml:"healthcheck" validate:"required,dive"`
 	AccessLog       *AccessLogConfig   `yaml:"access_log" validate:"required,dive"`
+	ReadTimeout     *time.Duration     `yaml:"read_timeout" validate:"required"`
+	WriteTimeout    *time.Duration     `yaml:"write_timeout" validate:"required"`
 }
 
 type HealthcheckConfig struct {

@@ -19,13 +19,28 @@ import (
 type Proxy struct {
 	balancer     Balancer
 	accessLogger handler.AccessLogger
+	server       http.Server
 }
 
-func NewProxy(balancer Balancer, l handler.AccessLogger) *Proxy {
-	return &Proxy{
+func NewProxy(balancer Balancer, l handler.AccessLogger, readTimeout time.Duration, writeTimeout time.Duration) *Proxy {
+	p := &Proxy{
 		balancer:     balancer,
 		accessLogger: l,
 	}
+
+	handler := &handler.ReverseProxy{
+		AccessLogger:   p.accessLogger,
+		Director:       p.director,
+		PickBackend:    p.pickBackend,
+		AfterRoundTrip: p.afterRoundTrip,
+	}
+	p.server = http.Server{
+		Handler:      handler,
+		ReadTimeout:  readTimeout,
+		WriteTimeout: writeTimeout,
+	}
+
+	return p
 }
 
 func (p *Proxy) ListenAndServe(listen string) error {
@@ -53,32 +68,22 @@ func (p *Proxy) ListenAndServe(listen string) error {
 }
 
 func (p *Proxy) Serve(listener net.Listener) error {
-	handler := &handler.ReverseProxy{
-		AccessLogger:   p.accessLogger,
-		Director:       p.director,
-		PickBackend:    p.pickBackend,
-		AfterRoundTrip: p.afterRoundTrip,
-	}
-	server := http.Server{
-		Handler: handler,
-	}
-
 	go func() {
-		server.Serve(listener)
+		p.server.Serve(listener)
 	}()
 
-	p.waitSignal(server)
+	p.waitSignal()
 
 	return nil
 }
 
-func (p *Proxy) waitSignal(server http.Server) {
+func (p *Proxy) waitSignal() {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGTERM)
 	<-sigCh
 
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-	if err := server.Shutdown(ctx); err != nil {
+	ctx, _ := context.WithTimeout(context.Background(), p.server.ReadTimeout+p.server.WriteTimeout)
+	if err := p.server.Shutdown(ctx); err != nil {
 		log.Fatal(err)
 	}
 }
