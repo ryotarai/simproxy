@@ -67,6 +67,12 @@ func (p *Proxy) Serve(listener net.Listener) error {
 		server.Serve(listener)
 	}()
 
+	p.waitSignal(server)
+
+	return nil
+}
+
+func (p *Proxy) waitSignal(server http.Server) {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGTERM)
 	<-sigCh
@@ -75,8 +81,6 @@ func (p *Proxy) Serve(listener net.Listener) error {
 	if err := server.Shutdown(ctx); err != nil {
 		log.Fatal(err)
 	}
-
-	return nil
 }
 
 func (p *Proxy) director(req *http.Request, backend handler.Backend) {
