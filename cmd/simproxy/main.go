@@ -43,17 +43,14 @@ func main() {
 			log.Fatal(err)
 		}
 
-		c := &simproxy.Backend{
+		b2 := &simproxy.Backend{
 			URL:            url,
 			HealthcheckURL: url.ResolveReference(hcPath),
 			Weight:         *b.Weight,
 		}
 
-		if err != nil {
-			log.Fatal(err)
-		}
 		healthchecker := &simproxy.Healthchecker{
-			Backend:   c,
+			Backend:   b2,
 			Balancer:  balancer,
 			Interval:  *config.Healthcheck.Interval,
 			FallCount: *config.Healthcheck.FallCount,

@@ -17,39 +17,55 @@ type Healthchecker struct {
 	active       bool
 	errorCount   int
 	successCount int
+	client       http.Client
 }
 
 func (c *Healthchecker) Start() error {
-	client := http.Client{
+	c.client = http.Client{
 		Transport: http.DefaultTransport,
 		Timeout:   c.Interval,
 	}
 
-	req, err := http.NewRequest("GET", c.Backend.HealthcheckURL.String(), nil)
-	if err != nil {
-		return err
-	}
+	log.Printf("[healthchecker] [%s] start", c.Backend.HealthcheckURL)
+
+	c.successCount = c.RiseCount - 1
+	c.check() // sync
 
 	go func() {
-		log.Printf("[healthchecker] starting %s", c.Backend.HealthcheckURL)
 		for {
 			after := time.After(c.Interval)
-			res, err := client.Do(req)
-			if err != nil {
-				c.onError(err.Error())
-			} else {
-				msg := fmt.Sprintf("status %d", res.StatusCode)
-				if 200 <= res.StatusCode && res.StatusCode < 300 {
-					c.onSuccess(msg)
-				} else {
-					c.onError(msg)
-				}
-			}
+			c.check()
 			<-after
 		}
 	}()
 
 	return nil
+}
+
+func (c *Healthchecker) check() {
+	res, err := c.request()
+	if err != nil {
+		c.onError(err.Error())
+	} else {
+		msg := fmt.Sprintf("status %d", res.StatusCode)
+		if 200 <= res.StatusCode && res.StatusCode < 300 {
+			c.onSuccess(msg)
+		} else {
+			c.onError(msg)
+		}
+	}
+}
+
+func (c *Healthchecker) request() (*http.Response, error) {
+	req, err := http.NewRequest("GET", c.Backend.HealthcheckURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	res, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (c *Healthchecker) onSuccess(msg string) {

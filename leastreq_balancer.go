@@ -87,6 +87,11 @@ func (b *LeastreqBalancer) AddBackend(backend *Backend) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
+	_, ok := b.stateByBackend[backend]
+	if ok {
+		return
+	}
+
 	item := &LeastreqState{
 		Requests: 0,
 		Backend:  backend,
@@ -99,7 +104,11 @@ func (b *LeastreqBalancer) RemoveBackend(backend *Backend) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
-	item := b.stateByBackend[backend]
+	item, ok := b.stateByBackend[backend]
+	if !ok {
+		return
+	}
+
 	b.set.Remove(item)
 	delete(b.stateByBackend, backend)
 }
