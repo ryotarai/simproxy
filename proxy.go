@@ -20,10 +20,12 @@ type Proxy struct {
 	balancer     Balancer
 	accessLogger handler.AccessLogger
 	server       http.Server
+	logger       *log.Logger
 }
 
 func NewProxy(balancer Balancer, l handler.AccessLogger, readTimeout time.Duration, writeTimeout time.Duration, logger *log.Logger) *Proxy {
 	p := &Proxy{
+		logger:       logger,
 		balancer:     balancer,
 		accessLogger: l,
 	}
@@ -87,7 +89,7 @@ func (p *Proxy) waitSignal() {
 	ctx, cancel := context.WithTimeout(context.Background(), p.server.ReadTimeout+p.server.WriteTimeout)
 	defer cancel()
 	if err := p.server.Shutdown(ctx); err != nil {
-		log.Fatal(err)
+		p.logger.Fatal(err)
 	}
 }
 
