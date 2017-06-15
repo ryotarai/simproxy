@@ -22,7 +22,7 @@ type Proxy struct {
 	server       http.Server
 }
 
-func NewProxy(balancer Balancer, l handler.AccessLogger, readTimeout time.Duration, writeTimeout time.Duration) *Proxy {
+func NewProxy(balancer Balancer, l handler.AccessLogger, readTimeout time.Duration, writeTimeout time.Duration, logger *log.Logger) *Proxy {
 	p := &Proxy{
 		balancer:     balancer,
 		accessLogger: l,
@@ -33,8 +33,10 @@ func NewProxy(balancer Balancer, l handler.AccessLogger, readTimeout time.Durati
 		Director:       p.director,
 		PickBackend:    p.pickBackend,
 		AfterRoundTrip: p.afterRoundTrip,
+		ErrorLog:       logger,
 	}
 	p.server = http.Server{
+		ErrorLog:     logger,
 		Handler:      handler,
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
@@ -82,7 +84,8 @@ func (p *Proxy) waitSignal() {
 	signal.Notify(sigCh, syscall.SIGTERM)
 	<-sigCh
 
-	ctx, _ := context.WithTimeout(context.Background(), p.server.ReadTimeout+p.server.WriteTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), p.server.ReadTimeout+p.server.WriteTimeout)
+	defer cancel()
 	if err := p.server.Shutdown(ctx); err != nil {
 		log.Fatal(err)
 	}
@@ -106,9 +109,4 @@ func (p *Proxy) afterRoundTrip(b handler.Backend) {
 		panic(fmt.Sprintf("%#v is not Backend", b2))
 	}
 	p.balancer.ReturnBackend(b2)
-}
-
-func (p *Proxy) Log(r handler.LogRecord) error {
-	log.Println(r)
-	return nil
 }

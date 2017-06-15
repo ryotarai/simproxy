@@ -8,6 +8,7 @@ import (
 )
 
 type Healthchecker struct {
+	Logger    *log.Logger
 	Backend   *Backend
 	Balancer  Balancer
 	Interval  time.Duration
@@ -26,7 +27,7 @@ func (c *Healthchecker) Start() error {
 		Timeout:   c.Interval,
 	}
 
-	log.Printf("[healthchecker] [%s] start", c.Backend.HealthcheckURL)
+	c.Logger.Printf("[healthchecker] [%s] start", c.Backend.HealthcheckURL)
 
 	c.successCount = c.RiseCount - 1
 	c.check() // sync
@@ -75,9 +76,9 @@ func (c *Healthchecker) onSuccess(msg string) {
 	}
 
 	c.successCount++
-	log.Printf("[healthchecker] [%s] success %d/%d: %s", c.Backend.HealthcheckURL, c.successCount, c.RiseCount, msg)
+	c.Logger.Printf("[healthchecker] [%s] success %d/%d: %s", c.Backend.HealthcheckURL, c.successCount, c.RiseCount, msg)
 	if c.RiseCount <= c.successCount {
-		log.Printf("[healthchecker] [%s] adding to balancer", c.Backend.HealthcheckURL)
+		c.Logger.Printf("[healthchecker] [%s] adding to balancer", c.Backend.HealthcheckURL)
 		c.Balancer.AddBackend(c.Backend)
 		c.active = true
 	}
@@ -85,15 +86,15 @@ func (c *Healthchecker) onSuccess(msg string) {
 
 func (c *Healthchecker) onError(msg string) {
 	if !c.active {
-		log.Printf("[healthchecker] [%s] error: %s", c.Backend.HealthcheckURL, msg)
+		c.Logger.Printf("[healthchecker] [%s] error: %s", c.Backend.HealthcheckURL, msg)
 		c.successCount = 0
 		return
 	}
 
 	c.errorCount++
-	log.Printf("[healthchecker] [%s] error %d/%d: %s", c.Backend.HealthcheckURL, c.errorCount, c.FallCount, msg)
+	c.Logger.Printf("[healthchecker] [%s] error %d/%d: %s", c.Backend.HealthcheckURL, c.errorCount, c.FallCount, msg)
 	if c.FallCount <= c.errorCount {
-		log.Printf("[healthchecker] [%s] removing from balancer", c.Backend.HealthcheckURL)
+		c.Logger.Printf("[healthchecker] [%s] removing from balancer", c.Backend.HealthcheckURL)
 		c.Balancer.RemoveBackend(c.Backend)
 		c.active = false
 	}

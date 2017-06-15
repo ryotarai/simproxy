@@ -5,6 +5,8 @@ access_log:
   format: 'ltsv'
   path: '/dev/stdout'
   fields: ['time', 'status', 'size', 'reqtime_nsec', 'backend']
+error_log:
+  path: '/dev/stderr'
 healthcheck:
   path: '/'
   interval: '1s'
