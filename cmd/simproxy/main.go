@@ -77,7 +77,7 @@ func main() {
 	}
 
 	proxy := simproxy.NewProxy(balancer, logger)
-	err = proxy.Serve(*config.Listen)
+	err = proxy.ListenAndServe(*config.Listen)
 	if err != nil {
 		log.Fatal(err)
 	}

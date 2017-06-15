@@ -1,4 +1,5 @@
-listen: '127.0.0.1:8080'
+#listen: '127.0.0.1:8080'
+listen: 'SERVER_STARTER'
 balancing_method: 'leastreq'
 access_log:
   format: 'ltsv'

@@ -12,6 +12,7 @@ import (
 
 	"fmt"
 
+	serverstarter "github.com/lestrrat/go-server-starter/listener"
 	"github.com/ryotarai/simproxy/handler"
 )
 
@@ -27,7 +28,31 @@ func NewProxy(balancer Balancer, l handler.AccessLogger) *Proxy {
 	}
 }
 
-func (p *Proxy) Serve(listen string) error {
+func (p *Proxy) ListenAndServe(listen string) error {
+	var l net.Listener
+	if listen == "SERVER_STARTER" {
+		ls, err := serverstarter.ListenAll()
+		if err != nil {
+			return err
+		}
+		if len(ls) > 1 {
+			return fmt.Errorf("%d sockets (more than 1) are passed by server-starter", len(ls))
+		}
+		l = ls[0]
+	} else {
+		var err error
+		l, err = net.Listen("tcp", listen)
+		if err != nil {
+			return err
+		}
+	}
+
+	defer l.Close()
+
+	return p.Serve(l)
+}
+
+func (p *Proxy) Serve(listener net.Listener) error {
 	handler := &handler.ReverseProxy{
 		AccessLogger:   p.accessLogger,
 		Director:       p.director,
@@ -38,13 +63,8 @@ func (p *Proxy) Serve(listen string) error {
 		Handler: handler,
 	}
 
-	l, err := net.Listen("tcp", listen)
-	if err != nil {
-		return err
-	}
 	go func() {
-		defer l.Close()
-		server.Serve(l)
+		server.Serve(listener)
 	}()
 
 	sigCh := make(chan os.Signal, 1)
