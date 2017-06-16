@@ -20,7 +20,6 @@ func NewHandler(balancer Balancer, logger *log.Logger, accessLogger handler.Acce
 
 	h.handler = &handler.ReverseProxy{
 		AccessLogger:   accessLogger,
-		Director:       h.director,
 		PickBackend:    h.pickBackend,
 		AfterRoundTrip: h.afterRoundTrip,
 		ErrorLog:       logger,
@@ -31,10 +30,6 @@ func NewHandler(balancer Balancer, logger *log.Logger, accessLogger handler.Acce
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.handler.ServeHTTP(w, r)
-}
-
-func (h *Handler) director(req *http.Request, backend handler.Backend) {
-	handler.StandardDirector(req, backend.GetURL())
 }
 
 func (h *Handler) pickBackend() (handler.Backend, error) {
