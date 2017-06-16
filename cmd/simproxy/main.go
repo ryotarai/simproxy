@@ -31,7 +31,7 @@ func main() {
 }
 
 func setupErrorLogger(c *ErrorLogConfig) (*log.Logger, error) {
-	w, err := os.OpenFile(*c.Path, os.O_APPEND, 0644)
+	w, err := os.OpenFile(*c.Path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func start(config *Config) {
 		errorLogger.Fatal(err)
 	}
 
-	f, err := os.Open(*config.AccessLog.Path)
+	f, err := os.OpenFile(*config.AccessLog.Path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		errorLogger.Fatal(err)
 	}
