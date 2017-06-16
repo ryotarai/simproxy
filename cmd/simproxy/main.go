@@ -77,7 +77,7 @@ func start(config *Config) {
 			Weight:         *b.Weight,
 		}
 
-		healthchecker := &simproxy.Healthchecker{
+		healthchecker := &simproxy.HealthChecker{
 			State:     healthStore,
 			Logger:    errorLogger,
 			Backend:   b2,

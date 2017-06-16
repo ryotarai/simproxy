@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type Healthchecker struct {
+type HealthChecker struct {
 	State     *HealthStateStore
 	Logger    *log.Logger
 	Backend   *Backend
@@ -22,7 +22,7 @@ type Healthchecker struct {
 	client       http.Client
 }
 
-func (c *Healthchecker) Start() error {
+func (c *HealthChecker) Start() error {
 	c.client = http.Client{
 		Transport: http.DefaultTransport,
 		Timeout:   c.Interval,
@@ -43,7 +43,7 @@ func (c *Healthchecker) Start() error {
 	return nil
 }
 
-func (c *Healthchecker) check() {
+func (c *HealthChecker) check() {
 	res, err := c.request()
 	if err != nil {
 		c.onError(err.Error())
@@ -57,7 +57,7 @@ func (c *Healthchecker) check() {
 	}
 }
 
-func (c *Healthchecker) request() (*http.Response, error) {
+func (c *HealthChecker) request() (*http.Response, error) {
 	req, err := http.NewRequest("GET", c.Backend.HealthcheckURL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func (c *Healthchecker) request() (*http.Response, error) {
 	return res, nil
 }
 
-func (c *Healthchecker) onSuccess(msg string) {
+func (c *HealthChecker) onSuccess(msg string) {
 	if c.active {
 		c.errorCount = 0
 		return
@@ -86,13 +86,13 @@ func (c *Healthchecker) onSuccess(msg string) {
 	}
 }
 
-func (c *Healthchecker) addToBalancer() {
+func (c *HealthChecker) addToBalancer() {
 	c.logf("adding to balancer")
 	c.Balancer.AddBackend(c.Backend)
 	c.active = true
 }
 
-func (c *Healthchecker) onError(msg string) {
+func (c *HealthChecker) onError(msg string) {
 	if !c.active {
 		c.logf("error: %s", msg)
 		c.successCount = 0
@@ -107,12 +107,12 @@ func (c *Healthchecker) onError(msg string) {
 	}
 }
 
-func (c *Healthchecker) removeFromBalancer() {
+func (c *HealthChecker) removeFromBalancer() {
 	c.logf("removing from balancer")
 	c.Balancer.RemoveBackend(c.Backend)
 	c.active = false
 }
 
-func (c *Healthchecker) logf(format string, args ...interface{}) {
+func (c *HealthChecker) logf(format string, args ...interface{}) {
 	c.Logger.Printf(fmt.Sprintf("[healthchecker] [%s] ", c.Backend.HealthcheckURL)+format, args...)
 }
