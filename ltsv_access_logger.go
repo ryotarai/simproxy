@@ -15,9 +15,9 @@ type LTSVAccessLogger struct {
 }
 
 func (l *LTSVAccessLogger) Log(r handler.LogRecord) error {
-	a := []string{}
-	for _, f := range l.Fields {
-		a = append(a, fmt.Sprintf("%s:%s", f, r[f]))
+	a := make([]string, len(l.Fields))
+	for i, f := range l.Fields {
+		a[i] = fmt.Sprintf("%s:%s", f, r[f])
 	}
 	line := strings.Join(a, "\t")
 	_, err := fmt.Fprintf(l.w, "%s\n", line)
