@@ -55,6 +55,9 @@ func (p *Proxy) ListenAndServe(listen string) error {
 			return err
 		}
 		if len(ls) > 1 {
+			for _, l := range ls {
+				l.Close()
+			}
 			return fmt.Errorf("%d sockets (more than 1) are passed by server-starter", len(ls))
 		}
 		l = ls[0]
