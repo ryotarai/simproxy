@@ -12,7 +12,10 @@ func TestRetainServer(t *testing.T) {
 		{URL: u1, Weight: 1},
 		{URL: u2, Weight: 2},
 	}
-	b := NewLeastreqBalancer(backends)
+	b := NewLeastreqBalancer()
+	for _, be := range backends {
+		b.AddBackend(be)
+	}
 
 	expects := []*Backend{
 		backends[0],
@@ -21,7 +24,12 @@ func TestRetainServer(t *testing.T) {
 		backends[0],
 	}
 	for _, e := range expects {
-		if s := b.RetainServer(); s != e {
+		s, err := b.PickBackend()
+		if err != nil {
+			t.Error(err)
+		}
+
+		if s != e {
 			t.Errorf("%#v is expected but %#v", e, s)
 		}
 	}
@@ -34,7 +42,10 @@ func TestReleaseServer(t *testing.T) {
 		{URL: u1, Weight: 1},
 		{URL: u2, Weight: 2},
 	}
-	b := NewLeastreqBalancer(backends)
+	b := NewLeastreqBalancer()
+	for _, be := range backends {
+		b.AddBackend(be)
+	}
 
 	expects := []*Backend{
 		backends[0],
@@ -42,19 +53,29 @@ func TestReleaseServer(t *testing.T) {
 		backends[1],
 	}
 	for _, e := range expects {
-		if s := b.RetainServer(); s != e {
+		s, err := b.PickBackend()
+		if err != nil {
+			t.Error(err)
+		}
+
+		if s != e {
 			t.Errorf("%#v is expected but %#v", e, s)
 		}
 	}
 
-	b.ReleaseServer(backends[1])
+	b.ReturnBackend(backends[1])
 
 	expects = []*Backend{
 		backends[1],
 		backends[0],
 	}
 	for _, e := range expects {
-		if s := b.RetainServer(); s != e {
+		s, err := b.PickBackend()
+		if err != nil {
+			t.Error(err)
+		}
+
+		if s != e {
 			t.Errorf("%#v is expected but %#v", e, s)
 		}
 	}

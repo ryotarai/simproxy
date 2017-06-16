@@ -28,8 +28,6 @@ func (c *Healthchecker) Start() error {
 		Timeout:   c.Interval,
 	}
 
-	c.logf("[healthchecker] [%s] start", c.Backend.HealthcheckURL)
-
 	if c.State.State(c.Backend.URL.String()) == HEALTH_STATE_HEALTHY {
 		c.addToBalancer()
 	}

@@ -25,9 +25,9 @@ func leastreqStateComparator(a, b interface{}) int {
 		float64(itemB.Requests)/float64(itemB.Backend.Weight)
 	if delta == 0 {
 		if itemA.Backend.URL.String() > itemB.Backend.URL.String() {
-			return -1
+			return 1
 		}
-		return 1
+		return -1
 	}
 	if delta < 0.0 {
 		return -1
