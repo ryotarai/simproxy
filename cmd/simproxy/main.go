@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/ryotarai/simproxy"
+	"github.com/ryotarai/simproxy/handler"
 )
 
 func main() {
@@ -96,18 +97,21 @@ func start(config *Config) {
 		errorLogger.Fatal(err)
 	}
 
-	f, err := os.OpenFile(*config.AccessLog.Path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		errorLogger.Fatal(err)
-	}
-	defer f.Close()
+	var accessLogger handler.AccessLogger
+	if config.AccessLog != nil {
+		f, err := os.OpenFile(*config.AccessLog.Path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+		if err != nil {
+			errorLogger.Fatal(err)
+		}
+		defer f.Close()
 
-	logger, err := simproxy.NewAccessLogger(*config.AccessLog.Format, f, config.AccessLog.Fields)
-	if err != nil {
-		errorLogger.Fatal(err)
+		accessLogger, err = simproxy.NewAccessLogger(*config.AccessLog.Format, f, config.AccessLog.Fields)
+		if err != nil {
+			errorLogger.Fatal(err)
+		}
 	}
 
-	proxy := simproxy.NewProxy(balancer, logger, *config.ReadTimeout, *config.WriteTimeout, errorLogger)
+	proxy := simproxy.NewProxy(balancer, accessLogger, *config.ReadTimeout, *config.WriteTimeout, errorLogger)
 	err = proxy.ListenAndServe(*config.Listen)
 	if err != nil {
 		errorLogger.Fatal(err)

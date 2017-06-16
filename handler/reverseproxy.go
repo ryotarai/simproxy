@@ -143,13 +143,12 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	p.serveHTTP(logRW, req, record)
 	end := time.Now()
 
-	record["time"] = end.Format(time.RFC3339)
-	record["time_nsec"] = fmt.Sprintf("%d", end.UnixNano())
-	record["reqtime_nsec"] = fmt.Sprintf("%d", end.UnixNano()-start.UnixNano())
-	record["status"] = fmt.Sprintf("%d", logRW.Status())
-	record["size"] = fmt.Sprintf("%d", logRW.Size())
-
 	if p.AccessLogger != nil {
+		record["time"] = end.Format(time.RFC3339)
+		record["time_nsec"] = fmt.Sprintf("%d", end.UnixNano())
+		record["reqtime_nsec"] = fmt.Sprintf("%d", end.UnixNano()-start.UnixNano())
+		record["status"] = fmt.Sprintf("%d", logRW.Status())
+		record["size"] = fmt.Sprintf("%d", logRW.Size())
 		p.AccessLogger.Log(record)
 	}
 }

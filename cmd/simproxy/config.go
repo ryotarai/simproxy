@@ -14,7 +14,7 @@ type Config struct {
 	Backends        []*BackendConfig   `yaml:"backends" validate:"required,dive"`
 	BalancingMethod *string            `yaml:"balancing_method" validate:"required"`
 	Healthcheck     *HealthcheckConfig `yaml:"healthcheck" validate:"required,dive"`
-	AccessLog       *AccessLogConfig   `yaml:"access_log" validate:"required,dive"`
+	AccessLog       *AccessLogConfig   `yaml:"access_log"`
 	ErrorLog        *ErrorLogConfig    `yaml:"error_log" validate:"required,dive"`
 	ReadTimeout     *time.Duration     `yaml:"read_timeout" validate:"required"`
 	WriteTimeout    *time.Duration     `yaml:"write_timeout" validate:"required"`
