@@ -111,7 +111,11 @@ func start(config *Config) {
 		}
 	}
 
-	proxy := simproxy.NewProxy(balancer, accessLogger, *config.ReadTimeout, *config.WriteTimeout, errorLogger)
+	handler := simproxy.NewHandler(balancer, errorLogger, accessLogger)
+
+	proxy := simproxy.NewProxy(handler, errorLogger)
+	proxy.ReadTimeout = *config.ReadTimeout
+	proxy.WriteTimeout = *config.WriteTimeout
 	err = proxy.ListenAndServe(*config.Listen)
 	if err != nil {
 		errorLogger.Fatal(err)

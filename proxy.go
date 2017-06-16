@@ -13,38 +13,20 @@ import (
 	"fmt"
 
 	serverstarter "github.com/lestrrat/go-server-starter/listener"
-	"github.com/ryotarai/simproxy/handler"
 )
 
 type Proxy struct {
-	balancer     Balancer
-	accessLogger handler.AccessLogger
-	server       http.Server
-	logger       *log.Logger
+	Logger       *log.Logger
+	Handler      *Handler
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
 }
 
-func NewProxy(balancer Balancer, l handler.AccessLogger, readTimeout time.Duration, writeTimeout time.Duration, logger *log.Logger) *Proxy {
-	p := &Proxy{
-		logger:       logger,
-		balancer:     balancer,
-		accessLogger: l,
+func NewProxy(handler *Handler, logger *log.Logger) *Proxy {
+	return &Proxy{
+		Logger:  logger,
+		Handler: handler,
 	}
-
-	handler := &handler.ReverseProxy{
-		AccessLogger:   p.accessLogger,
-		Director:       p.director,
-		PickBackend:    p.pickBackend,
-		AfterRoundTrip: p.afterRoundTrip,
-		ErrorLog:       logger,
-	}
-	p.server = http.Server{
-		ErrorLog:     logger,
-		Handler:      handler,
-		ReadTimeout:  readTimeout,
-		WriteTimeout: writeTimeout,
-	}
-
-	return p
 }
 
 func (p *Proxy) ListenAndServe(listen string) error {
@@ -75,43 +57,26 @@ func (p *Proxy) ListenAndServe(listen string) error {
 }
 
 func (p *Proxy) Serve(listener net.Listener) error {
+	server := http.Server{
+		ErrorLog:     p.Logger,
+		Handler:      p.Handler,
+		ReadTimeout:  p.ReadTimeout,
+		WriteTimeout: p.WriteTimeout,
+	}
+
 	go func() {
-		p.server.Serve(listener)
+		server.Serve(listener)
 	}()
 
-	p.waitSignal()
-
-	return nil
-}
-
-func (p *Proxy) waitSignal() {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGTERM)
 	<-sigCh
 
-	ctx, cancel := context.WithTimeout(context.Background(), p.server.ReadTimeout+p.server.WriteTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), server.ReadTimeout+server.WriteTimeout)
 	defer cancel()
-	if err := p.server.Shutdown(ctx); err != nil {
-		p.logger.Fatal(err)
+	if err := server.Shutdown(ctx); err != nil {
+		p.Logger.Fatal(err)
 	}
-}
 
-func (p *Proxy) director(req *http.Request, backend handler.Backend) {
-	handler.StandardDirector(req, backend.GetURL())
-}
-
-func (p *Proxy) pickBackend() (handler.Backend, error) {
-	backend, err := p.balancer.PickBackend()
-	if err != nil {
-		return nil, err
-	}
-	return backend, nil
-}
-
-func (p *Proxy) afterRoundTrip(b handler.Backend) {
-	b2, ok := b.(*Backend)
-	if !ok {
-		panic(fmt.Sprintf("%#v is not Backend", b2))
-	}
-	p.balancer.ReturnBackend(b2)
+	return nil
 }
