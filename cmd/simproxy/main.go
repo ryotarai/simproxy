@@ -6,6 +6,8 @@ import (
 
 	"os"
 
+	"fmt"
+
 	"github.com/ryotarai/simproxy"
 	"github.com/ryotarai/simproxy/handler"
 )
@@ -16,6 +18,11 @@ func main() {
 	err := fs.Parse(os.Args[1:])
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if options.ShowVersion {
+		fmt.Printf("simproxy v%s\n", Version)
+		os.Exit(0)
 	}
 
 	config, err := LoadConfigFromYAML(options.Config)
