@@ -109,7 +109,12 @@ func start(config *Config) {
 		}
 	}
 
-	handler := simproxy.NewHandler(balancer, errorLogger, accessLogger)
+	h := ""
+	if config.BackendURLHeader != nil {
+		h = *config.BackendURLHeader
+	}
+
+	handler := simproxy.NewHandler(balancer, errorLogger, accessLogger, h)
 
 	proxy := simproxy.NewProxy(handler, errorLogger)
 	proxy.ReadTimeout = *config.ReadTimeout

@@ -41,8 +41,9 @@ type Backend interface {
 type ReverseProxy struct {
 	AccessLogger AccessLogger
 
-	PickBackend    func() (Backend, error)
-	AfterRoundTrip func(Backend)
+	PickBackend      func() (Backend, error)
+	AfterRoundTrip   func(Backend)
+	BackendURLHeader string
 
 	// The transport used to perform proxy requests.
 	// If nil, http.DefaultTransport is used.
@@ -240,6 +241,10 @@ func (p *ReverseProxy) serveHTTP(rw http.ResponseWriter, req *http.Request, logR
 			rw.WriteHeader(http.StatusBadGateway)
 			return
 		}
+	}
+
+	if p.BackendURLHeader != "" {
+		rw.Header().Add(p.BackendURLHeader, backend.GetURL().String())
 	}
 
 	copyHeader(rw.Header(), res.Header)

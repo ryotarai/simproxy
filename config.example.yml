@@ -1,5 +1,5 @@
-#listen: '127.0.0.1:8080'
-listen: 'SERVER_STARTER'
+listen: '127.0.0.1:8080'
+# listen: 'SERVER_STARTER'
 balancing_method: 'leastreq'
 access_log:
   format: 'ltsv'
@@ -20,3 +20,4 @@ backends:
   weight: 2
 read_timeout: 10s
 write_timeout: 10s
+backend_url_header: 'x-simproxy-backend'

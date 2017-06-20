@@ -13,16 +13,17 @@ type Handler struct {
 	balancer Balancer
 }
 
-func NewHandler(balancer Balancer, logger *log.Logger, accessLogger handler.AccessLogger) *Handler {
+func NewHandler(balancer Balancer, logger *log.Logger, accessLogger handler.AccessLogger, backendURLHeader string) *Handler {
 	h := &Handler{
 		balancer: balancer,
 	}
 
 	h.handler = &handler.ReverseProxy{
-		AccessLogger:   accessLogger,
-		PickBackend:    h.pickBackend,
-		AfterRoundTrip: h.afterRoundTrip,
-		ErrorLog:       logger,
+		AccessLogger:     accessLogger,
+		PickBackend:      h.pickBackend,
+		AfterRoundTrip:   h.afterRoundTrip,
+		ErrorLog:         logger,
+		BackendURLHeader: backendURLHeader,
 	}
 
 	return h
