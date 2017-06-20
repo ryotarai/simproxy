@@ -31,20 +31,18 @@ func main() {
 	start(config)
 }
 
-func setupErrorLogger(c *ErrorLogConfig) (*log.Logger, error) {
-	w, err := os.OpenFile(*c.Path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		return nil, err
-	}
-
-	return log.New(w, "", log.LstdFlags), nil
+func openWritableFile(path string) (*os.File, error) {
+	return os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 }
 
 func start(config *Config) {
-	errorLogger, err := setupErrorLogger(config.ErrorLog)
+	w, err := openWritableFile(*config.ErrorLog.Path)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer w.Close()
+
+	errorLogger := log.New(w, "", log.LstdFlags)
 
 	balancer, err := simproxy.NewBalancer(*config.BalancingMethod)
 	if err != nil {
@@ -99,7 +97,7 @@ func start(config *Config) {
 
 	var accessLogger handler.AccessLogger
 	if config.AccessLog != nil {
-		f, err := os.OpenFile(*config.AccessLog.Path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+		f, err := openWritableFile(*config.AccessLog.Path)
 		if err != nil {
 			errorLogger.Fatal(err)
 		}
