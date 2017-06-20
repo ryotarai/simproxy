@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// This is forked version of https://github.com/golang/go/blob/be855e3f28507dd3e34eb4699c84493eeaae68db/src/net/http/httputil/reverseproxy.go
+
 // HTTP reverse proxy handler
 
 package handler
