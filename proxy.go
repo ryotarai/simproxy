@@ -72,7 +72,7 @@ func (p *Proxy) Serve(listener net.Listener) error {
 	signal.Notify(sigCh, syscall.SIGTERM)
 	<-sigCh
 
-	ctx, cancel := context.WithTimeout(context.Background(), server.ReadTimeout+server.WriteTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), server.ReadTimeout+server.WriteTimeout+(1*time.Second))
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {
 		p.Logger.Fatal(err)
