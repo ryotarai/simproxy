@@ -1,23 +1,43 @@
+# listen: Addr and port to listen (required)
+#   If "SERVER_STARTER" is set in this field, fd passed by https://github.com/lestrrat/go-server-starter will be used
 listen: '127.0.0.1:8080'
-# listen: 'SERVER_STARTER'
+
+# balancing_method: Method to balance requests to backends (required)
+#   Currently, "leastreq" method is the only supported.
+#   "leastreq" method selects a backend which have the least outstanding requests
 balancing_method: 'leastreq'
+
+# access_log (optional)
 access_log:
   format: 'ltsv'
   path: '/dev/stdout'
   fields: ['time', 'status', 'size', 'reqtime_nsec', 'backend']
+
+# error_log (required)
 error_log:
   path: '/dev/stderr'
+
+# heathcheck: Healthcheck to determine whether backends are alive or dead (required)
 healthcheck:
   path: '/'
   interval: '1s'
+  # rise_count: If consecutive rize_count checks are passed, the backend will be marked as 'alive'
   rise_count: 2
+  # fall_count: If consecutive fall_count checks are not passed, the backend will be marked as 'dead'
   fall_count: 2
+  # state_file: TSV file to store current health state of backends
+  #   Initial backend state after launching will be loaded from state_file
   state_file: './tmp/health_state.tsv'
+
+# backends: Servers to process actual requests (required)
 backends:
 - url: 'http://127.0.0.1:9000'
   weight: 1
 - url: 'http://127.0.0.1:9001'
   weight: 2
+
+# backend_url_header: If this is set, responses for clients include URL of a backend for the request.
+backend_url_header: 'x-simproxy-backend'
+
 read_timeout: 10s
 write_timeout: 10s
-backend_url_header: 'x-simproxy-backend'
