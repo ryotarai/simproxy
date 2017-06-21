@@ -127,6 +127,7 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		record["reqtime_nsec"] = fmt.Sprintf("%d", end.UnixNano()-start.UnixNano())
 		record["status"] = fmt.Sprintf("%d", logRW.Status())
 		record["size"] = fmt.Sprintf("%d", logRW.Size())
+		record["url"] = req.URL.String()
 		p.AccessLogger.Log(record)
 	}
 }
