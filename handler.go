@@ -3,7 +3,9 @@ package simproxy
 import (
 	"fmt"
 	"log"
+	"net"
 	"net/http"
+	"time"
 
 	"github.com/ryotarai/simproxy/handler"
 )
@@ -13,9 +15,23 @@ type Handler struct {
 	balancer Balancer
 }
 
-func NewHandler(balancer Balancer, logger *log.Logger, accessLogger handler.AccessLogger, backendURLHeader string) *Handler {
+func NewHandler(balancer Balancer, logger *log.Logger, accessLogger handler.AccessLogger, backendURLHeader string, maxIdleConns int, maxIdleConnsPerHost int) *Handler {
 	h := &Handler{
 		balancer: balancer,
+	}
+
+	transport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:          maxIdleConns,
+		MaxIdleConnsPerHost:   maxIdleConnsPerHost,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
 	}
 
 	h.handler = &handler.ReverseProxy{
@@ -24,6 +40,7 @@ func NewHandler(balancer Balancer, logger *log.Logger, accessLogger handler.Acce
 		AfterRoundTrip:   h.afterRoundTrip,
 		ErrorLog:         logger,
 		BackendURLHeader: backendURLHeader,
+		Transport:        transport,
 	}
 
 	return h

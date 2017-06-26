@@ -39,5 +39,11 @@ backends:
 # backend_url_header: If this is set, responses for clients include URL of a backend for the request.
 backend_url_header: 'x-simproxy-backend'
 
+# max_idle_conns: the maximum idle (keep-alive) connections to keep
+max_idle_conns: 100
+
+# max_idle_conns_per_host: the maximum idle (keep-alive) connections to keep per-host
+max_idle_conns_per_host: 16
+
 read_timeout: 10s
 write_timeout: 10s
