@@ -296,22 +296,22 @@ func (p *ReverseProxy) serveHTTP(rw http.ResponseWriter, req *http.Request, logR
 func (p *ReverseProxy) clientTrace() *httptrace.ClientTrace {
 	return &httptrace.ClientTrace{
 		DNSStart: func(dnsInfo httptrace.DNSStartInfo) {
-			p.ErrorLog.Printf("TRACE: DNSStart: %+v", dnsInfo)
+			p.logf("TRACE: DNSStart: %+v", dnsInfo)
 		},
 		DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
-			p.ErrorLog.Printf("TRACE: DNSDone: %+v", dnsInfo)
+			p.logf("TRACE: DNSDone: %+v", dnsInfo)
 		},
 		GetConn: func(hostPort string) {
-			p.ErrorLog.Printf("TRACE: GetConn: %+v", hostPort)
+			p.logf("TRACE: GetConn: %+v", hostPort)
 		},
 		GotConn: func(connInfo httptrace.GotConnInfo) {
-			p.ErrorLog.Printf("TRACE: GotConn: %+v", connInfo)
+			p.logf("TRACE: GotConn: %+v", connInfo)
 		},
 		ConnectStart: func(network, addr string) {
-			p.ErrorLog.Printf("TRACE: ConnectStart: %+v %+v", network, addr)
+			p.logf("TRACE: ConnectStart: %+v %+v", network, addr)
 		},
 		ConnectDone: func(network, addr string, err error) {
-			p.ErrorLog.Printf("TRACE: ConnectDone: %+v %+v %+v", network, addr, err)
+			p.logf("TRACE: ConnectDone: %+v %+v %+v", network, addr, err)
 		},
 	}
 }
