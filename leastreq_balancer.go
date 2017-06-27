@@ -13,7 +13,26 @@ type LeastreqState struct {
 	Backend  *Backend
 }
 
-func leastreqStateComparator(a, b interface{}) int {
+type LeastreqBalancer struct {
+	set            *treeset.Set
+	stateByBackend map[*Backend]*LeastreqState
+	mutex          *sync.Mutex
+}
+
+func NewLeastreqBalancer() *LeastreqBalancer {
+	b := &LeastreqBalancer{
+		mutex:          &sync.Mutex{},
+		stateByBackend: map[*Backend]*LeastreqState{},
+	}
+	b.set = treeset.NewWith(b.leastreqStateComparator)
+
+	return b
+}
+
+func (bl *LeastreqBalancer) leastreqStateComparator(a, b interface{}) int {
+	bl.mutex.Lock()
+	defer bl.mutex.Unlock()
+
 	itemA := a.(*LeastreqState)
 	itemB := b.(*LeastreqState)
 
@@ -33,22 +52,6 @@ func leastreqStateComparator(a, b interface{}) int {
 		return -1
 	}
 	return 1
-}
-
-type LeastreqBalancer struct {
-	set            *treeset.Set
-	stateByBackend map[*Backend]*LeastreqState
-	mutex          *sync.Mutex
-}
-
-func NewLeastreqBalancer() *LeastreqBalancer {
-	b := &LeastreqBalancer{
-		mutex:          &sync.Mutex{},
-		stateByBackend: map[*Backend]*LeastreqState{},
-	}
-	b.set = treeset.NewWith(leastreqStateComparator)
-
-	return b
 }
 
 func (b *LeastreqBalancer) PickBackend() (*Backend, error) {
