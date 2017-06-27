@@ -307,6 +307,9 @@ func (p *ReverseProxy) clientTrace() *httptrace.ClientTrace {
 		GotConn: func(connInfo httptrace.GotConnInfo) {
 			p.logf("TRACE: GotConn: %+v", connInfo)
 		},
+		PutIdleConn: func(err error) {
+			p.logf("TRACE: PutIdleConn: %+v", err)
+		},
 		ConnectStart: func(network, addr string) {
 			p.logf("TRACE: ConnectStart: %+v %+v", network, addr)
 		},
