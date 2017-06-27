@@ -15,6 +15,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/http/httptrace"
 	"net/url"
 	"strings"
 	"sync"
@@ -41,9 +42,10 @@ type Backend interface {
 type ReverseProxy struct {
 	AccessLogger AccessLogger
 
-	PickBackend      func() (Backend, error)
-	AfterRoundTrip   func(Backend)
-	BackendURLHeader string
+	PickBackend       func() (Backend, error)
+	AfterRoundTrip    func(Backend)
+	BackendURLHeader  string
+	EnableClientTrace bool
 
 	// The transport used to perform proxy requests.
 	// If nil, http.DefaultTransport is used.
@@ -165,6 +167,11 @@ func (p *ReverseProxy) serveHTTP(rw http.ResponseWriter, req *http.Request, logR
 		return
 	}
 
+	if p.EnableClientTrace {
+		trace := p.clientTrace()
+		outreq = outreq.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+	}
+
 	p.director(outreq, backend.GetURL())
 	logRecord["backend"] = backend.GetURL().String()
 
@@ -283,6 +290,29 @@ func (p *ReverseProxy) serveHTTP(rw http.ResponseWriter, req *http.Request, logR
 		for _, v := range vv {
 			rw.Header().Add(k, v)
 		}
+	}
+}
+
+func (p *ReverseProxy) clientTrace() *httptrace.ClientTrace {
+	return &httptrace.ClientTrace{
+		DNSStart: func(dnsInfo httptrace.DNSStartInfo) {
+			p.ErrorLog.Printf("TRACE: DNSStart: %+v", dnsInfo)
+		},
+		DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
+			p.ErrorLog.Printf("TRACE: DNSDone: %+v", dnsInfo)
+		},
+		GetConn: func(hostPort string) {
+			p.ErrorLog.Printf("TRACE: GetConn: %+v", hostPort)
+		},
+		GotConn: func(connInfo httptrace.GotConnInfo) {
+			p.ErrorLog.Printf("TRACE: GotConn: %+v", connInfo)
+		},
+		ConnectStart: func(network, addr string) {
+			p.ErrorLog.Printf("TRACE: ConnectStart: %+v %+v", network, addr)
+		},
+		ConnectDone: func(network, addr string, err error) {
+			p.ErrorLog.Printf("TRACE: ConnectDone: %+v %+v %+v", network, addr, err)
+		},
 	}
 }
 

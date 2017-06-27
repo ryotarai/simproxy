@@ -131,7 +131,7 @@ func start(config *Config) {
 		maxIdleConns = *config.MaxIdleConns
 	}
 
-	handler := simproxy.NewHandler(balancer, errorLogger, accessLogger, h, maxIdleConns, maxIdleConnsPerHost)
+	handler := simproxy.NewHandler(balancer, errorLogger, accessLogger, h, maxIdleConns, maxIdleConnsPerHost, config.EnableBackendTrace)
 
 	proxy := simproxy.NewProxy(handler, errorLogger)
 	proxy.ReadTimeout = *config.ReadTimeout

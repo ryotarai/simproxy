@@ -15,7 +15,7 @@ type Handler struct {
 	balancer Balancer
 }
 
-func NewHandler(balancer Balancer, logger *log.Logger, accessLogger handler.AccessLogger, backendURLHeader string, maxIdleConns int, maxIdleConnsPerHost int) *Handler {
+func NewHandler(balancer Balancer, logger *log.Logger, accessLogger handler.AccessLogger, backendURLHeader string, maxIdleConns int, maxIdleConnsPerHost int, enableBackendTrace bool) *Handler {
 	h := &Handler{
 		balancer: balancer,
 	}
@@ -35,12 +35,13 @@ func NewHandler(balancer Balancer, logger *log.Logger, accessLogger handler.Acce
 	}
 
 	h.handler = &handler.ReverseProxy{
-		AccessLogger:     accessLogger,
-		PickBackend:      h.pickBackend,
-		AfterRoundTrip:   h.afterRoundTrip,
-		ErrorLog:         logger,
-		BackendURLHeader: backendURLHeader,
-		Transport:        transport,
+		AccessLogger:      accessLogger,
+		PickBackend:       h.pickBackend,
+		AfterRoundTrip:    h.afterRoundTrip,
+		ErrorLog:          logger,
+		BackendURLHeader:  backendURLHeader,
+		Transport:         transport,
+		EnableClientTrace: enableBackendTrace,
 	}
 
 	return h
