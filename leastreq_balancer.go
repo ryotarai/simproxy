@@ -75,7 +75,11 @@ func (b *LeastreqBalancer) ReturnBackend(backend *Backend) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
-	item := b.stateByBackend[backend]
+	item, ok := b.stateByBackend[backend]
+	if !ok {
+		return // already removed
+	}
+
 	b.set.Remove(item)
 	if item.Requests > 0 {
 		item.Requests--
