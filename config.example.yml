@@ -47,3 +47,5 @@ max_idle_conns_per_host: 16
 
 read_timeout: 10s
 write_timeout: 10s
+
+pprof_addr: '127.0.0.1:8100'

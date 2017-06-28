@@ -1,12 +1,12 @@
 package main
 
 import (
-	"log"
-	"net/url"
-
-	"os"
-
 	"fmt"
+	"log"
+	"net/http"
+	"net/http/pprof"
+	"net/url"
+	"os"
 
 	"github.com/ryotarai/simproxy"
 	"github.com/ryotarai/simproxy/handler"
@@ -50,6 +50,10 @@ func start(config *Config) {
 	defer w.Close()
 
 	errorLogger := log.New(w, "", log.LstdFlags)
+
+	if config.PprofAddr != nil {
+		startPprof(*config.PprofAddr)
+	}
 
 	balancer, err := simproxy.NewBalancer(*config.BalancingMethod)
 	if err != nil {
@@ -140,4 +144,14 @@ func start(config *Config) {
 	if err != nil {
 		errorLogger.Fatal(err)
 	}
+}
+
+func startPprof(addr string) {
+	s := &http.Server{
+		Addr:    addr,
+		Handler: http.HandlerFunc(pprof.Index),
+	}
+	go func() {
+		s.ListenAndServe()
+	}()
 }

@@ -21,7 +21,9 @@ type Config struct {
 	BackendURLHeader    *string            `yaml:"backend_url_header"`
 	MaxIdleConnsPerHost *int               `yaml:"max_idle_conns_per_host"`
 	MaxIdleConns        *int               `yaml:"max_idle_conns"`
-	EnableBackendTrace  bool               `yaml:"enable_backend_trace"`
+
+	EnableBackendTrace bool    `yaml:"enable_backend_trace"`
+	PprofAddr          *string `yaml:"pprof_addr"`
 }
 
 type HealthcheckConfig struct {
