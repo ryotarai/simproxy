@@ -71,7 +71,10 @@ func (c *HealthChecker) request() (*http.Response, error) {
 
 func (c *HealthChecker) onSuccess(msg string) {
 	if c.active {
-		c.errorCount = 0
+		if c.errorCount > 0 {
+			c.errorCount = 0
+			c.logf("success: %s", msg)
+		}
 		return
 	}
 
