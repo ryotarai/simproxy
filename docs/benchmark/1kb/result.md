@@ -8,6 +8,26 @@
 - ryotarai-test-004 (EC2 c4.large): nginx (backend)
 
 ```scala
+package simproxy
+
+import io.gatling.core.Predef._
+import io.gatling.http.Predef._
+import scala.concurrent.duration._
+
+class Basic1KBSimulation extends Simulation {
+  val httpConf = http
+    .baseURL("http://ryotarai-test-002") // Here is the root for all relative URLs
+    .acceptHeader("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8") // Here are the common headers
+    .doNotTrackHeader("1")
+    .acceptLanguageHeader("en-US,en;q=0.5")
+//    .acceptEncodingHeader("gzip, deflate")
+    .userAgentHeader("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:16.0) Gecko/20100101 Firefox/16.0")
+
+  val scn = scenario("main")
+    .forever(exec(http("1kb").get("/1kb.txt")))
+
+  setUp(scn.inject(rampUsersPerSec(1) to 50 during(30 seconds)).protocols(httpConf)).maxDuration(60 seconds)
+}
 ```
 
 ```yaml
@@ -32,6 +52,32 @@ write_timeout: 10s
 max_idle_conns_per_host: 32
 max_idle_conns: 1024
 pprof_addr: '127.0.0.1:9000'
+```
+
+```
+# backend
+keepalive_requests 10000;
+
+# Default server configuration
+#
+server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+
+        root /var/www/html;
+
+        # Add index.php to the list if you are using PHP
+        index index.html index.htm index.nginx-debian.html;
+
+        server_name _;
+        if_modified_since off;
+
+        location / {
+                # First attempt to serve request as file, then
+                # as directory, then fall back to displaying a 404.
+                try_files $uri $uri/ =404;
+        }
+}
 ```
 
 ## Result
