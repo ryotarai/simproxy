@@ -1,0 +1,10 @@
+{
+  "simulation": "simproxy.Long100KBSimulation",
+  "simulationId": "long100kbsimulation",
+  "start": 1498717365917,
+  "description": "",
+  "scenarios": ["main"],
+  "assertions": [
+
+  ]
+}

@@ -1,11 +1,11 @@
-# Benchmark
+# Benchmark: Long Running
 
-## Long running scenario
+## Setup
 
-- ryotarai-test-001 (c4.large): benchmarker
-- ryotarai-test-002 (c4.large): Simproxy
-- ryotarai-test-003 (c4.large): nginx (backend)
-- ryotarai-test-004 (c4.large): nginx (backend)
+- ryotarai-test-001 (EC2 c4.large): benchmarker
+- ryotarai-test-002 (EC2 c4.large): Simproxy
+- ryotarai-test-003 (EC2 c4.large): nginx (backend)
+- ryotarai-test-004 (EC2 c4.large): nginx (backend)
 
 ```scala
 package simproxy
@@ -75,3 +75,15 @@ Generating reports...
 ================================================================================
 ```
 
+## Result
+
+### Goroutines, RSS
+
+![](https://raw.githubusercontent.com/ryotarai/simproxy/master/docs/benchmark/long_running/leak.png)
+
+- No goroutine leak is observed
+- No memory leak is observed
+
+### Gatling
+
+![](https://raw.githubusercontent.com/ryotarai/simproxy/master/docs/benchmark/long_running/gatling.png)
