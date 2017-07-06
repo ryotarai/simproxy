@@ -36,16 +36,17 @@ backends:
 - url: 'http://127.0.0.1:9001'
   weight: 2
 
-# backend_url_header: If this is set, responses for clients include URL of a backend for the request.
+# backend_url_header: If this is set, responses for clients include URL of a backend processing the request. (optional)
 backend_url_header: 'x-simproxy-backend'
 
-# max_idle_conns: the maximum idle (keep-alive) connections to keep
+# max_idle_conns: the maximum idle (keep-alive) connections to keep (optional)
 max_idle_conns: 100
 
-# max_idle_conns_per_host: the maximum idle (keep-alive) connections to keep per-host
+# max_idle_conns_per_host: the maximum idle (keep-alive) connections to keep per-host (optional)
 max_idle_conns_per_host: 16
 
 read_timeout: 10s
 write_timeout: 10s
 
+# pprof_addr: enable pprof/http for profiling (optional)
 pprof_addr: '127.0.0.1:8100'
