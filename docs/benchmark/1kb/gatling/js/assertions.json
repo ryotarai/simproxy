@@ -1,0 +1,10 @@
+{
+  "simulation": "simproxy.Basic1KBSimulation",
+  "simulationId": "basic1kbsimulation",
+  "start": 1499327831945,
+  "description": "",
+  "scenarios": ["main"],
+  "assertions": [
+
+  ]
+}
