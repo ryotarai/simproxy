@@ -1,4 +1,4 @@
-# Benchmark: Long Running
+# Benchmark: 1KB responses
 
 ## Setup
 
