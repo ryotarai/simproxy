@@ -19,3 +19,7 @@ test:
 release: buildx
 	git tag v$(VERSION)
 	ghr v$(VERSION) bin/v$(VERSION)/
+
+dep:
+	dep ensure
+	dep status
