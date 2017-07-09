@@ -138,8 +138,15 @@ func start(config *Config) {
 	handler := simproxy.NewHandler(balancer, errorLogger, accessLogger, h, maxIdleConns, maxIdleConnsPerHost, config.EnableBackendTrace)
 
 	proxy := simproxy.NewProxy(handler, errorLogger)
-	proxy.ReadTimeout = *config.ReadTimeout
-	proxy.WriteTimeout = *config.WriteTimeout
+	if config.ReadTimeout != nil {
+		proxy.ReadTimeout = *config.ReadTimeout
+	}
+	if config.ReadHeaderTimeout != nil {
+		proxy.ReadHeaderTimeout = *config.ReadHeaderTimeout
+	}
+	if config.WriteTimeout != nil {
+		proxy.WriteTimeout = *config.WriteTimeout
+	}
 	err = proxy.ListenAndServe(*config.Listen)
 	if err != nil {
 		errorLogger.Fatal(err)

@@ -16,8 +16,9 @@ type Config struct {
 	Healthcheck         *HealthcheckConfig `yaml:"healthcheck" validate:"required,dive"`
 	AccessLog           *AccessLogConfig   `yaml:"access_log"`
 	ErrorLog            *ErrorLogConfig    `yaml:"error_log" validate:"required,dive"`
-	ReadTimeout         *time.Duration     `yaml:"read_timeout" validate:"required"`
-	WriteTimeout        *time.Duration     `yaml:"write_timeout" validate:"required"`
+	ReadTimeout         *time.Duration     `yaml:"read_timeout"`
+	ReadHeaderTimeout   *time.Duration     `yaml:"read_header_timeout"`
+	WriteTimeout        *time.Duration     `yaml:"write_timeout"`
 	BackendURLHeader    *string            `yaml:"backend_url_header"`
 	MaxIdleConnsPerHost *int               `yaml:"max_idle_conns_per_host"`
 	MaxIdleConns        *int               `yaml:"max_idle_conns"`

@@ -45,7 +45,10 @@ max_idle_conns: 100
 # max_idle_conns_per_host: the maximum idle (keep-alive) connections to keep per-host (optional)
 max_idle_conns_per_host: 16
 
+# timeout options (optional)
+# see: https://golang.org/pkg/net/http/#Server
 read_timeout: 10s
+read_header_timeout: 10s
 write_timeout: 10s
 
 # pprof_addr: enable pprof/http for profiling (optional)

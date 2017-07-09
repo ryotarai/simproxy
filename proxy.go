@@ -16,10 +16,11 @@ import (
 )
 
 type Proxy struct {
-	Logger       *log.Logger
-	Handler      *Handler
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
+	Logger            *log.Logger
+	Handler           *Handler
+	ReadTimeout       time.Duration
+	ReadHeaderTimeout time.Duration
+	WriteTimeout      time.Duration
 }
 
 func NewProxy(handler *Handler, logger *log.Logger) *Proxy {
@@ -58,10 +59,11 @@ func (p *Proxy) ListenAndServe(listen string) error {
 
 func (p *Proxy) Serve(listener net.Listener) error {
 	server := http.Server{
-		ErrorLog:     p.Logger,
-		Handler:      p.Handler,
-		ReadTimeout:  p.ReadTimeout,
-		WriteTimeout: p.WriteTimeout,
+		ErrorLog:          p.Logger,
+		Handler:           p.Handler,
+		ReadTimeout:       p.ReadTimeout,
+		ReadHeaderTimeout: p.ReadHeaderTimeout,
+		WriteTimeout:      p.WriteTimeout,
 	}
 
 	go func() {
