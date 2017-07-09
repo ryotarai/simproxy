@@ -17,3 +17,10 @@ $ simproxy -config config.yml
 ## Configuration
 
 https://github.com/ryotarai/simproxy/blob/master/config.example.yml
+
+## Balancing Method
+
+### `leastreq` (least requests)
+
+`leastreq` method proxies incoming requests to backends that have least outstanding requests.
+'outstanding requests' means requests that the backend received but does not renspond to yet.
