@@ -39,7 +39,7 @@ func setupTestServer() *httptest.Server {
 	}))
 }
 
-func sendTestRequest(ts *httptest.Server, req *http.Request) *http.Response {
+func sendTestRequest(ts *httptest.Server, req *http.Request, backendURLHeader string) *http.Response {
 	u, err := url.Parse(ts.URL)
 	if err != nil {
 		panic(err)
@@ -51,7 +51,11 @@ func sendTestRequest(ts *httptest.Server, req *http.Request) *http.Response {
 	balancer := &dummyBalancer{
 		backend: backend,
 	}
-	handler := NewHandler(balancer, nil, nil)
+	handler := &Handler{
+		Balancer:         balancer,
+		BackendURLHeader: backendURLHeader,
+	}
+	handler.Setup()
 
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
@@ -65,7 +69,7 @@ func TestHandlerGET(t *testing.T) {
 
 	req := httptest.NewRequest("GET", "http://example.com/foo?a=b", nil)
 	req.Header.Add("x-header", "hello")
-	res := sendTestRequest(ts, req)
+	res := sendTestRequest(ts, req, "x-simproxy-backend")
 
 	if res.Header.Get("x-method") != "GET" {
 		t.Error("invalid method")
@@ -76,6 +80,9 @@ func TestHandlerGET(t *testing.T) {
 	if res.Header.Get("x-header") != "hello" {
 		t.Error("invalid header")
 	}
+	if res.Header.Get("x-simproxy-backend") != ts.URL {
+		t.Error("invalid header")
+	}
 }
 
 func TestHandlerKeepalive(t *testing.T) {
@@ -83,11 +90,11 @@ func TestHandlerKeepalive(t *testing.T) {
 	defer ts.Close()
 
 	req1 := httptest.NewRequest("GET", "http://example.com/", nil)
-	res1 := sendTestRequest(ts, req1)
+	res1 := sendTestRequest(ts, req1, "")
 	addr1 := res1.Header.Get("x-remote-addr")
 
 	req2 := httptest.NewRequest("GET", "http://example.com/", nil)
-	res2 := sendTestRequest(ts, req2)
+	res2 := sendTestRequest(ts, req2, "")
 	addr2 := res2.Header.Get("x-remote-addr")
 
 	if addr1 != addr2 {
@@ -102,7 +109,7 @@ func TestHandlerPOST(t *testing.T) {
 	body := bytes.NewBufferString("THIS IS BODY")
 	req := httptest.NewRequest("POST", "http://example.com/foo?a=b", body)
 	req.Header.Add("x-header", "hello")
-	res := sendTestRequest(ts, req)
+	res := sendTestRequest(ts, req, "")
 
 	b, err := ioutil.ReadAll(res.Body)
 	if err != nil {

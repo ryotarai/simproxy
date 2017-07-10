@@ -14,7 +14,7 @@ buildx:
 	gox -ldflags "-X main.GitCommit=$(COMMIT)" -output "bin/v$(VERSION)/{{.Dir}}_{{.OS}}_{{.Arch}}_$(VERSION)" -arch "amd64" -os "linux darwin" ./cmd/simproxy
 
 test:
-	go test ./... -v
+	go test . -v
 
 release: buildx
 	git tag v$(VERSION)
