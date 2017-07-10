@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"net/http"
-	"net/http/pprof"
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/ryotarai/simproxy"
 	"github.com/ryotarai/simproxy/handler"
@@ -52,7 +53,7 @@ func start(config *Config) {
 	errorLogger := log.New(w, "", log.LstdFlags)
 
 	if config.PprofAddr != nil {
-		startPprof(*config.PprofAddr)
+		startPprofServer(*config.PprofAddr)
 	}
 
 	balancer, err := simproxy.NewBalancer(*config.BalancingMethod)
@@ -120,12 +121,12 @@ func start(config *Config) {
 		}
 	}
 
-	h := ""
+	backendURLHeader := ""
 	if config.BackendURLHeader != nil {
-		h = *config.BackendURLHeader
+		backendURLHeader = *config.BackendURLHeader
 	}
 
-	maxIdleConnsPerHost := 0 // default
+	maxIdleConnsPerHost := 0 // DefaultMaxIdleConnsPerHost will be used
 	if config.MaxIdleConnsPerHost != nil {
 		maxIdleConnsPerHost = *config.MaxIdleConnsPerHost
 	}
@@ -135,7 +136,31 @@ func start(config *Config) {
 		maxIdleConns = *config.MaxIdleConns
 	}
 
-	handler := simproxy.NewHandler(balancer, errorLogger, accessLogger, h, maxIdleConns, maxIdleConnsPerHost, config.EnableBackendTrace)
+	transport := &http.Transport{
+		MaxIdleConns:        maxIdleConns,
+		MaxIdleConnsPerHost: maxIdleConnsPerHost,
+
+		// The following is the same as DefaultTransport
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
+	handler := &simproxy.Handler{
+		Balancer:           balancer,
+		Logger:             errorLogger,
+		AccessLogger:       accessLogger,
+		BackendURLHeader:   backendURLHeader,
+		EnableBackendTrace: config.EnableBackendTrace,
+		Transport:          transport,
+	}
+	handler.Setup()
 
 	proxy := simproxy.NewProxy(handler, errorLogger)
 	if config.ReadTimeout != nil {
@@ -151,14 +176,4 @@ func start(config *Config) {
 	if err != nil {
 		errorLogger.Fatal(err)
 	}
-}
-
-func startPprof(addr string) {
-	s := &http.Server{
-		Addr:    addr,
-		Handler: http.HandlerFunc(pprof.Index),
-	}
-	go func() {
-		s.ListenAndServe()
-	}()
 }

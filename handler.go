@@ -3,48 +3,38 @@ package simproxy
 import (
 	"fmt"
 	"log"
-	"net"
 	"net/http"
-	"time"
 
 	"github.com/ryotarai/simproxy/handler"
 )
 
 type Handler struct {
-	handler  http.Handler
-	balancer Balancer
+	Balancer           Balancer
+	Logger             *log.Logger
+	AccessLogger       handler.AccessLogger
+	BackendURLHeader   string
+	Transport          *http.Transport
+	EnableBackendTrace bool
+
+	handler http.Handler
 }
 
-func NewHandler(balancer Balancer, logger *log.Logger, accessLogger handler.AccessLogger, backendURLHeader string, maxIdleConns int, maxIdleConnsPerHost int, enableBackendTrace bool) *Handler {
-	h := &Handler{
-		balancer: balancer,
-	}
-
-	transport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-			DualStack: true,
-		}).DialContext,
-		MaxIdleConns:          maxIdleConns,
-		MaxIdleConnsPerHost:   maxIdleConnsPerHost,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
+func (h *Handler) Setup() {
+	transport := http.DefaultTransport
+	if h.Transport != nil {
+		transport = h.Transport
 	}
 
 	h.handler = &handler.ReverseProxy{
-		AccessLogger:      accessLogger,
-		PickBackend:       h.pickBackend,
-		AfterRoundTrip:    h.afterRoundTrip,
-		ErrorLog:          logger,
-		BackendURLHeader:  backendURLHeader,
+		AccessLogger:      h.AccessLogger,
+		ErrorLog:          h.Logger,
+		BackendURLHeader:  h.BackendURLHeader,
 		Transport:         transport,
-		EnableClientTrace: enableBackendTrace,
-	}
+		EnableClientTrace: h.EnableBackendTrace,
 
-	return h
+		PickBackend:    h.pickBackend,
+		AfterRoundTrip: h.afterRoundTrip,
+	}
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +42,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) pickBackend() (handler.Backend, error) {
-	backend, err := h.balancer.PickBackend()
+	backend, err := h.Balancer.PickBackend()
 	if err != nil {
 		return nil, err
 	}
@@ -64,5 +54,5 @@ func (h *Handler) afterRoundTrip(b handler.Backend) {
 	if !ok {
 		panic(fmt.Sprintf("%#v is not Backend", b2))
 	}
-	h.balancer.ReturnBackend(b2)
+	h.Balancer.ReturnBackend(b2)
 }
