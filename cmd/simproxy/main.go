@@ -61,7 +61,7 @@ func start(config *Config) {
 		errorLogger.Fatal(err)
 	}
 
-	healthStore := simproxy.NewHealthStateStore(*config.Healthcheck.StateFile)
+	healthStore := simproxy.NewHealthStateFileStore(*config.Healthcheck.StateFile)
 	err = healthStore.Load()
 	if err != nil {
 		errorLogger.Fatal(err)

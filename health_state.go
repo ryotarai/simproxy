@@ -18,20 +18,27 @@ const (
 	HEALTH_STATE_UNKNOWN
 )
 
-type HealthStateStore struct {
+type HealthStateStore interface {
+	Load() error
+	Mark(string, HealthState) error
+	Cleanup([]string) error
+	State(string) HealthState
+}
+
+type HealthStateFileStore struct {
 	Path  string
 	state map[string]HealthState
 	mutex sync.Mutex
 }
 
-func NewHealthStateStore(path string) *HealthStateStore {
-	return &HealthStateStore{
+func NewHealthStateFileStore(path string) *HealthStateFileStore {
+	return &HealthStateFileStore{
 		Path:  path,
 		mutex: sync.Mutex{},
 	}
 }
 
-func (s *HealthStateStore) Load() error {
+func (s *HealthStateFileStore) Load() error {
 	state := map[string]HealthState{}
 
 	if _, err := os.Stat(s.Path); os.IsNotExist(err) {
@@ -58,7 +65,7 @@ func (s *HealthStateStore) Load() error {
 	return nil
 }
 
-func (s *HealthStateStore) Mark(u string, state HealthState) error {
+func (s *HealthStateFileStore) Mark(u string, state HealthState) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -66,7 +73,7 @@ func (s *HealthStateStore) Mark(u string, state HealthState) error {
 	return s.write()
 }
 
-func (s *HealthStateStore) Cleanup(us []string) error {
+func (s *HealthStateFileStore) Cleanup(us []string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -90,7 +97,7 @@ func (s *HealthStateStore) Cleanup(us []string) error {
 	return s.write()
 }
 
-func (s *HealthStateStore) State(u string) HealthState {
+func (s *HealthStateFileStore) State(u string) HealthState {
 	st, ok := s.state[u]
 	if ok {
 		return st
@@ -98,7 +105,7 @@ func (s *HealthStateStore) State(u string) HealthState {
 	return HEALTH_STATE_UNKNOWN
 }
 
-func (s *HealthStateStore) write() error {
+func (s *HealthStateFileStore) write() error {
 	f, err := ioutil.TempFile("", "simproxy")
 	if err != nil {
 		return err

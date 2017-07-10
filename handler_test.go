@@ -2,7 +2,6 @@ package simproxy
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -10,47 +9,13 @@ import (
 	"testing"
 )
 
-type dummyBalancer struct {
-	backend *Backend
-}
-
-func (b *dummyBalancer) AddBackend(*Backend) {
-}
-
-func (b *dummyBalancer) RemoveBackend(*Backend) {
-}
-
-func (b *dummyBalancer) PickBackend() (*Backend, error) {
-	return b.backend, nil
-}
-
-func (b *dummyBalancer) ReturnBackend(*Backend) {
-}
-
-func setupTestServer() *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("x-method", r.Method)
-		w.Header().Add("x-url", r.URL.String())
-		w.Header().Add("x-header", r.Header.Get("x-header"))
-		w.Header().Add("x-remote-addr", r.RemoteAddr)
-
-		body, _ := ioutil.ReadAll(r.Body)
-		fmt.Fprintf(w, "%s", string(body))
-	}))
-}
-
-func sendTestRequest(ts *httptest.Server, req *http.Request, backendURLHeader string) *http.Response {
-	u, err := url.Parse(ts.URL)
-	if err != nil {
-		panic(err)
-	}
-
+func sendTestRequest(u *url.URL, req *http.Request, backendURLHeader string) *http.Response {
 	backend := &Backend{
 		URL: u,
 	}
-	balancer := &dummyBalancer{
-		backend: backend,
-	}
+	balancer := &dummyBalancer{}
+	balancer.AddBackend(backend)
+
 	handler := &Handler{
 		Balancer:         balancer,
 		BackendURLHeader: backendURLHeader,
@@ -64,12 +29,12 @@ func sendTestRequest(ts *httptest.Server, req *http.Request, backendURLHeader st
 }
 
 func TestHandlerGET(t *testing.T) {
-	ts := setupTestServer()
-	defer ts.Close()
+	ts := newTestServer()
+	defer ts.server.Close()
 
 	req := httptest.NewRequest("GET", "http://example.com/foo?a=b", nil)
 	req.Header.Add("x-header", "hello")
-	res := sendTestRequest(ts, req, "x-simproxy-backend")
+	res := sendTestRequest(ts.url(), req, "x-simproxy-backend")
 
 	if res.Header.Get("x-method") != "GET" {
 		t.Error("invalid method")
@@ -80,21 +45,21 @@ func TestHandlerGET(t *testing.T) {
 	if res.Header.Get("x-header") != "hello" {
 		t.Error("invalid header")
 	}
-	if res.Header.Get("x-simproxy-backend") != ts.URL {
+	if res.Header.Get("x-simproxy-backend") != ts.server.URL {
 		t.Error("invalid header")
 	}
 }
 
 func TestHandlerKeepalive(t *testing.T) {
-	ts := setupTestServer()
-	defer ts.Close()
+	ts := newTestServer()
+	defer ts.server.Close()
 
 	req1 := httptest.NewRequest("GET", "http://example.com/", nil)
-	res1 := sendTestRequest(ts, req1, "")
+	res1 := sendTestRequest(ts.url(), req1, "")
 	addr1 := res1.Header.Get("x-remote-addr")
 
 	req2 := httptest.NewRequest("GET", "http://example.com/", nil)
-	res2 := sendTestRequest(ts, req2, "")
+	res2 := sendTestRequest(ts.url(), req2, "")
 	addr2 := res2.Header.Get("x-remote-addr")
 
 	if addr1 != addr2 {
@@ -103,13 +68,13 @@ func TestHandlerKeepalive(t *testing.T) {
 }
 
 func TestHandlerPOST(t *testing.T) {
-	ts := setupTestServer()
-	defer ts.Close()
+	ts := newTestServer()
+	defer ts.server.Close()
 
 	body := bytes.NewBufferString("THIS IS BODY")
 	req := httptest.NewRequest("POST", "http://example.com/foo?a=b", body)
 	req.Header.Add("x-header", "hello")
-	res := sendTestRequest(ts, req, "")
+	res := sendTestRequest(ts.url(), req, "")
 
 	b, err := ioutil.ReadAll(res.Body)
 	if err != nil {

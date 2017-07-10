@@ -8,7 +8,7 @@ import (
 )
 
 type HealthChecker struct {
-	State     *HealthStateStore
+	State     HealthStateStore
 	Logger    *log.Logger
 	Backend   *Backend
 	Balancer  Balancer
@@ -117,5 +117,7 @@ func (c *HealthChecker) removeFromBalancer() {
 }
 
 func (c *HealthChecker) logf(format string, args ...interface{}) {
-	c.Logger.Printf(fmt.Sprintf("[healthchecker] [%s] ", c.Backend.HealthcheckURL)+format, args...)
+	if c.Logger != nil {
+		c.Logger.Printf(fmt.Sprintf("[healthchecker] [%s] ", c.Backend.HealthcheckURL)+format, args...)
+	}
 }
