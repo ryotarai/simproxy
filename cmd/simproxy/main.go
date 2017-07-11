@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"time"
 
@@ -67,30 +66,25 @@ func start(config *Config) {
 		errorLogger.Fatal(err)
 	}
 
-	hcPath, err := url.Parse(*config.Healthcheck.Path)
+	backends, err := config.SimproxyBackends()
 	if err != nil {
 		errorLogger.Fatal(err)
 	}
 
 	backendStrURLs := []string{}
-	for _, b := range config.Backends {
-		url, err := url.Parse(*b.URL)
-		if err != nil {
-			errorLogger.Fatal(err)
-		}
+	for _, b := range backends {
+		backendStrURLs = append(backendStrURLs, b.URL.String())
+	}
+	err = healthStore.Cleanup(backendStrURLs)
+	if err != nil {
+		errorLogger.Fatal(err)
+	}
 
-		backendStrURLs = append(backendStrURLs, url.String())
-
-		b2 := &simproxy.Backend{
-			URL:            url,
-			HealthcheckURL: url.ResolveReference(hcPath),
-			Weight:         *b.Weight,
-		}
-
+	for _, b := range backends {
 		healthchecker := &simproxy.HealthChecker{
 			State:     healthStore,
 			Logger:    errorLogger,
-			Backend:   b2,
+			Backend:   b,
 			Balancer:  balancer,
 			Interval:  *config.Healthcheck.Interval,
 			FallCount: *config.Healthcheck.FallCount,
@@ -100,11 +94,6 @@ func start(config *Config) {
 		if err != nil {
 			errorLogger.Fatal(err)
 		}
-	}
-
-	err = healthStore.Cleanup(backendStrURLs)
-	if err != nil {
-		errorLogger.Fatal(err)
 	}
 
 	var accessLogger handler.AccessLogger

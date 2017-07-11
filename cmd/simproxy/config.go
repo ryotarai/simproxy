@@ -2,9 +2,11 @@ package main
 
 import (
 	"io/ioutil"
+	"net/url"
 
 	"time"
 
+	"github.com/ryotarai/simproxy"
 	"gopkg.in/go-playground/validator.v9"
 	"gopkg.in/yaml.v2"
 )
@@ -69,4 +71,29 @@ func (c *Config) Validate() error {
 	v := validator.New()
 	err := v.Struct(c)
 	return err
+}
+
+func (c *Config) SimproxyBackends() ([]*simproxy.Backend, error) {
+	hcPath, err := url.Parse(*c.Healthcheck.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	backends := []*simproxy.Backend{}
+	for _, b := range c.Backends {
+		url, err := url.Parse(*b.URL)
+		if err != nil {
+			return nil, err
+		}
+
+		b2 := &simproxy.Backend{
+			URL:            url,
+			HealthcheckURL: url.ResolveReference(hcPath),
+			Weight:         *b.Weight,
+		}
+
+		backends = append(backends, b2)
+	}
+
+	return backends, nil
 }
