@@ -11,7 +11,7 @@ type CommandLineOptions struct {
 
 func setupFlagSet(name string, options *CommandLineOptions) *flag.FlagSet {
 	fs := flag.NewFlagSet(name, flag.ContinueOnError)
-	fs.StringVar(&options.Config, "config", "/etc/simproxy.yml", "Config file path")
+	fs.StringVar(&options.Config, "config", "", "Config file path")
 	fs.BoolVar(&options.ShowVersion, "version", false, "Show version")
 	return fs
 }

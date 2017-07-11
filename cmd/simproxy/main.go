@@ -25,6 +25,11 @@ func main() {
 		os.Exit(0)
 	}
 
+	if options.Config == "" {
+		fmt.Println("ERROR: -config is mandatory")
+		os.Exit(1)
+	}
+
 	config, err := LoadConfigFromYAML(options.Config)
 	if err != nil {
 		log.Fatal(err)
