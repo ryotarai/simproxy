@@ -1,5 +1,7 @@
 package simproxy
 
+// Utilities for testing
+
 import (
 	"fmt"
 	"io/ioutil"

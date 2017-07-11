@@ -54,7 +54,7 @@ func (p *Proxy) ListenAndServe(listen string) error {
 
 	defer l.Close()
 
-	return p.Serve(l)
+	return p.Serve(l) // block
 }
 
 func (p *Proxy) Serve(listener net.Listener) error {
