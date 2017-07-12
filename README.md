@@ -8,6 +8,16 @@ Simproxy
 - balances HTTP requests to multiple backends (currently least request balancing is only supported)
 - supports server-starter
 
+## Installation
+
+Pre-built binaries are available at https://github.com/ryotarai/simproxy/releases
+
+Or you can install by `go get`:
+
+```
+$ go get github.com/ryotarai/simproxy/cmd/simproxy
+```
+
 ## Usage
 
 ```
