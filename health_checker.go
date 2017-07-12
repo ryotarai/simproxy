@@ -62,6 +62,7 @@ func (c *HealthChecker) request() (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("user-agent", "Simproxy")
 	res, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
