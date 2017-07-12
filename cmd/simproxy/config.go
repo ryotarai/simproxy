@@ -21,6 +21,7 @@ type Config struct {
 	ReadTimeout         *time.Duration     `yaml:"read_timeout"`
 	ReadHeaderTimeout   *time.Duration     `yaml:"read_header_timeout"`
 	WriteTimeout        *time.Duration     `yaml:"write_timeout"`
+	ShutdownTimeout     *time.Duration     `yaml:"shutdown_timeout"`
 	BackendURLHeader    *string            `yaml:"backend_url_header"`
 	MaxIdleConnsPerHost *int               `yaml:"max_idle_conns_per_host"`
 	MaxIdleConns        *int               `yaml:"max_idle_conns"`

@@ -45,7 +45,12 @@ max_idle_conns: 100
 # max_idle_conns_per_host: the maximum idle (keep-alive) connections to keep per-host (optional)
 max_idle_conns_per_host: 16
 
-# timeout options (optional)
+# shutdown_timeout: timeout for shutting down HTTP server (optional)
+#   On SIGTERM, Simproxy will try to shut down the server gracefully.
+#   If shutdown_timeout is over, the server will be shutted down forcibly.
+shutdown_timeout: 10s
+
+# HTTP server timeout options (optional)
 # see: https://golang.org/pkg/net/http/#Server
 read_timeout: 10s
 read_header_timeout: 10s

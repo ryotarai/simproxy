@@ -166,6 +166,9 @@ func start(config *Config) {
 	if config.WriteTimeout != nil {
 		proxy.WriteTimeout = *config.WriteTimeout
 	}
+	if config.ShutdownTimeout != nil {
+		proxy.ShutdownTimeout = *config.ShutdownTimeout
+	}
 	err = proxy.ListenAndServe(*config.Listen)
 	if err != nil {
 		errorLogger.Fatal(err)

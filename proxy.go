@@ -21,6 +21,7 @@ type Proxy struct {
 	ReadTimeout       time.Duration
 	ReadHeaderTimeout time.Duration
 	WriteTimeout      time.Duration
+	ShutdownTimeout   time.Duration
 }
 
 func NewProxy(handler *Handler, logger *log.Logger) *Proxy {
@@ -74,8 +75,13 @@ func (p *Proxy) Serve(listener net.Listener) error {
 	signal.Notify(sigCh, syscall.SIGTERM)
 	<-sigCh
 
-	ctx, cancel := context.WithTimeout(context.Background(), server.ReadTimeout+server.WriteTimeout+(1*time.Second))
-	defer cancel()
+	ctx := context.Background()
+	if p.ShutdownTimeout != time.Duration(0) {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, p.ShutdownTimeout)
+		defer cancel()
+	}
+
 	if err := server.Shutdown(ctx); err != nil {
 		p.Logger.Fatal(err)
 	}
