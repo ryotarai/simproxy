@@ -1,6 +1,7 @@
 package simproxy
 
 import (
+	"fmt"
 	"net/url"
 	"testing"
 )
@@ -78,5 +79,54 @@ func TestReleaseServer(t *testing.T) {
 		if s != e {
 			t.Errorf("%#v is expected but %#v", e, s)
 		}
+	}
+}
+
+func BenchmarkPickBackend1000(b *testing.B) {
+	balancer := NewLeastreqBalancer()
+	for i := 0; i < 1000; i++ {
+		u, err := url.Parse(fmt.Sprintf("http://127.0.0.1/%d", i))
+		if err != nil {
+			b.Error(err)
+		}
+		balancer.AddBackend(&Backend{
+			URL:    u,
+			Weight: 1,
+		})
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		balancer.PickBackend()
+	}
+}
+
+func BenchmarkReturnBackend1000(b *testing.B) {
+	balancer := NewLeastreqBalancer()
+	for i := 0; i < 1000; i++ {
+		u, err := url.Parse(fmt.Sprintf("http://127.0.0.1/%d", i))
+		if err != nil {
+			b.Error(err)
+		}
+		balancer.AddBackend(&Backend{
+			URL:    u,
+			Weight: 1,
+		})
+	}
+
+	bes := []*Backend{}
+	for i := 0; i < b.N; i++ {
+		be, err := balancer.PickBackend()
+		if err != nil {
+			b.Error(err)
+		}
+		bes = append(bes, be)
+	}
+
+	b.ResetTimer()
+
+	for _, be := range bes {
+		balancer.ReturnBackend(be)
 	}
 }

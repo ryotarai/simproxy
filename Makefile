@@ -16,6 +16,9 @@ buildx:
 test:
 	go test . -v
 
+bench:
+	go test -bench .
+
 release: buildx
 	git tag v$(VERSION)
 	git push origin v$(VERSION)
