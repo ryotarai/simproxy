@@ -34,3 +34,9 @@ https://github.com/ryotarai/simproxy/blob/master/config.example.yml
 
 `leastreq` method proxies incoming requests to backends that have least outstanding requests.
 'outstanding requests' means requests that the backend received but does not renspond to yet.
+
+## Development
+
+### Dependencies
+
+Dependencies are managed by [dep](https://github.com/golang/dep)
