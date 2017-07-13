@@ -18,6 +18,7 @@ test:
 
 release: buildx
 	git tag v$(VERSION)
+	git push origin v$(VERSION)
 	ghr v$(VERSION) bin/v$(VERSION)/
 
 dep:
