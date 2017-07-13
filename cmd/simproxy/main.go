@@ -71,7 +71,7 @@ func start(config *Config) {
 		errorLogger.Fatal(err)
 	}
 
-	backends, err := config.SimproxyBackends()
+	backends, err := config.BuildBackends()
 	if err != nil {
 		errorLogger.Fatal(err)
 	}

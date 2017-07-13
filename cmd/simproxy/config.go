@@ -74,7 +74,7 @@ func (c *Config) Validate() error {
 	return err
 }
 
-func (c *Config) SimproxyBackends() ([]*simproxy.Backend, error) {
+func (c *Config) BuildBackends() ([]*simproxy.Backend, error) {
 	hcPath, err := url.Parse(*c.Healthcheck.Path)
 	if err != nil {
 		return nil, err
