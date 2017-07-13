@@ -9,6 +9,7 @@ import (
 )
 
 type LeastreqState struct {
+	id       int
 	Requests int
 	Backend  *Backend
 }
@@ -24,7 +25,7 @@ func leastreqStateComparator(a, b interface{}) int {
 	delta := float64(itemA.Requests)/float64(itemA.Backend.Weight) -
 		float64(itemB.Requests)/float64(itemB.Backend.Weight)
 	if delta == 0 {
-		if itemA.Backend.URL.String() > itemB.Backend.URL.String() {
+		if itemA.id > itemB.id {
 			return 1
 		}
 		return -1
@@ -39,6 +40,7 @@ type LeastreqBalancer struct {
 	set            *treeset.Set
 	stateByBackend map[*Backend]*LeastreqState
 	mutex          *sync.Mutex
+	currentID      int
 }
 
 func NewLeastreqBalancer() *LeastreqBalancer {
@@ -97,9 +99,12 @@ func (b *LeastreqBalancer) AddBackend(backend *Backend) {
 	}
 
 	item := &LeastreqState{
+		id:       b.currentID,
 		Requests: 0,
 		Backend:  backend,
 	}
+	b.currentID++
+
 	b.set.Add(item)
 	b.stateByBackend[backend] = item
 }
