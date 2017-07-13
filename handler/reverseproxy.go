@@ -131,6 +131,7 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		record["size"] = fmt.Sprintf("%d", logRW.Size())
 		record["path"] = req.URL.Path
 		record["query"] = req.URL.RawQuery
+		record["method"] = req.Method
 		p.AccessLogger.Log(record)
 	}
 }
