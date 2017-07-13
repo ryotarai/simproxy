@@ -11,7 +11,7 @@ balancing_method: 'leastreq'
 access_log:
   format: 'ltsv'
   path: '/dev/stdout'
-  fields: ['time', 'status', 'size', 'reqtime_nsec', 'backend', 'path', 'query', 'method']
+  fields: ['time', 'time_nsec', 'status', 'size', 'reqtime_nsec', 'backend', 'path', 'query', 'method']
 
 # error_log (required)
 error_log:
