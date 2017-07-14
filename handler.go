@@ -9,12 +9,13 @@ import (
 )
 
 type Handler struct {
-	Balancer           Balancer
-	Logger             *log.Logger
-	AccessLogger       handler.AccessLogger
-	BackendURLHeader   string
-	Transport          *http.Transport
-	EnableBackendTrace bool
+	Balancer            Balancer
+	Logger              *log.Logger
+	AccessLogger        handler.AccessLogger
+	BackendURLHeader    string
+	Transport           *http.Transport
+	EnableBackendTrace  bool
+	AppendXForwardedFor bool
 
 	handler http.Handler
 }
@@ -26,11 +27,12 @@ func (h *Handler) Setup() {
 	}
 
 	h.handler = &handler.ReverseProxy{
-		AccessLogger:      h.AccessLogger,
-		ErrorLog:          h.Logger,
-		BackendURLHeader:  h.BackendURLHeader,
-		Transport:         transport,
-		EnableClientTrace: h.EnableBackendTrace,
+		AccessLogger:        h.AccessLogger,
+		ErrorLog:            h.Logger,
+		BackendURLHeader:    h.BackendURLHeader,
+		Transport:           transport,
+		EnableClientTrace:   h.EnableBackendTrace,
+		AppendXForwardedFor: h.AppendXForwardedFor,
 
 		PickBackend:    h.pickBackend,
 		AfterRoundTrip: h.afterRoundTrip,

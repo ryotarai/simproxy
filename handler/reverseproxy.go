@@ -42,10 +42,11 @@ type Backend interface {
 type ReverseProxy struct {
 	AccessLogger AccessLogger
 
-	PickBackend       func() (Backend, error)
-	AfterRoundTrip    func(Backend)
-	BackendURLHeader  string
-	EnableClientTrace bool
+	PickBackend         func() (Backend, error)
+	AfterRoundTrip      func(Backend)
+	BackendURLHeader    string
+	EnableClientTrace   bool
+	AppendXForwardedFor bool
 
 	// The transport used to perform proxy requests.
 	// If nil, http.DefaultTransport is used.
@@ -212,14 +213,16 @@ func (p *ReverseProxy) serveHTTP(rw http.ResponseWriter, req *http.Request, logR
 		}
 	}
 
-	if clientIP, _, err := net.SplitHostPort(req.RemoteAddr); err == nil {
-		// If we aren't the first proxy retain prior
-		// X-Forwarded-For information as a comma+space
-		// separated list and fold multiple headers into one.
-		if prior, ok := outreq.Header["X-Forwarded-For"]; ok {
-			clientIP = strings.Join(prior, ", ") + ", " + clientIP
+	if p.AppendXForwardedFor {
+		if clientIP, _, err := net.SplitHostPort(req.RemoteAddr); err == nil {
+			// If we aren't the first proxy retain prior
+			// X-Forwarded-For information as a comma+space
+			// separated list and fold multiple headers into one.
+			if prior, ok := outreq.Header["X-Forwarded-For"]; ok {
+				clientIP = strings.Join(prior, ", ") + ", " + clientIP
+			}
+			outreq.Header.Set("X-Forwarded-For", clientIP)
 		}
-		outreq.Header.Set("X-Forwarded-For", clientIP)
 	}
 
 	res, err := transport.RoundTrip(outreq)

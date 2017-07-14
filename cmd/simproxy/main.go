@@ -147,12 +147,13 @@ func start(config *Config) {
 	}
 
 	handler := &simproxy.Handler{
-		Balancer:           balancer,
-		Logger:             errorLogger,
-		AccessLogger:       accessLogger,
-		BackendURLHeader:   backendURLHeader,
-		EnableBackendTrace: config.EnableBackendTrace,
-		Transport:          transport,
+		Balancer:            balancer,
+		Logger:              errorLogger,
+		AccessLogger:        accessLogger,
+		BackendURLHeader:    backendURLHeader,
+		EnableBackendTrace:  config.EnableBackendTrace,
+		Transport:           transport,
+		AppendXForwardedFor: config.AppendXForwardedFor,
 	}
 	handler.Setup()
 

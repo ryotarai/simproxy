@@ -20,7 +20,7 @@ error_log:
 # heathcheck: Healthcheck to determine whether backends are alive or dead (required)
 healthcheck:
   path: '/'
-  interval: '1s'
+  interval: '10s'
   # rise_count: If consecutive rize_count checks are passed, the backend will be marked as 'alive'
   rise_count: 2
   # fall_count: If consecutive fall_count checks are not passed, the backend will be marked as 'dead'
@@ -55,6 +55,10 @@ shutdown_timeout: 10s
 read_timeout: 10s
 read_header_timeout: 10s
 write_timeout: 10s
+
+# append_x_forwarded_for (optional)
+#   If true, Simproxy will append client IP to X-Forwarded-For header for backend request
+append_x_forwarded_for: true
 
 # pprof_addr: enable pprof/http for profiling (optional)
 pprof_addr: '127.0.0.1:8100'
