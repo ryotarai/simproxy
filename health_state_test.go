@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -57,9 +58,14 @@ func TestHealthStateFileStoreMark(t *testing.T) {
 	s.Mark("bar", HEALTH_STATE_HEALTHY)
 
 	b, err := ioutil.ReadFile(path)
-	expected := "foo\t1\nbar\t0\n"
-	if string(b) != expected {
-		t.Errorf("expected %+v but got %+v", expected, string(b))
+	expected := "foo\t1\n"
+	if !strings.Contains(string(b), expected) {
+		t.Errorf("expected containing %+v but not: %+v", expected, string(b))
+	}
+
+	expected = "bar\t0\n"
+	if !strings.Contains(string(b), expected) {
+		t.Errorf("expected containing %+v but not: %+v", expected, string(b))
 	}
 }
 
