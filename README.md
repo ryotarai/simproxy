@@ -1,5 +1,7 @@
 # Simproxy
 
+[![CircleCI](https://circleci.com/gh/ryotarai/simproxy/tree/master.svg?style=svg)](https://circleci.com/gh/ryotarai/simproxy/tree/master)
+
 Simple HTTP load balancer
 
 Simproxy
