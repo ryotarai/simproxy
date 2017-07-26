@@ -1,5 +1,9 @@
 # listen: Addr and port to listen (required)
-#   If "SERVER_STARTER" is set in this field, fd passed by https://github.com/lestrrat/go-server-starter will be used
+#   If it has "SERVER_STARTER:" prefix, fd passed by https://github.com/lestrrat/go-server-starter will be used
+# e.g.
+#   127.0.0.1:8080
+#   SERVER_STARTER:0.0.0.0:8080
+#   SERVER_STARTER:/path/to/socket
 listen: '127.0.0.1:8080'
 
 # balancing_method: Method to balance requests to backends (required)
