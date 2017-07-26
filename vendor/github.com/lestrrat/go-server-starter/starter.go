@@ -44,16 +44,21 @@ func makeNiceSigNames() map[syscall.Signal]string {
 
 func init() {
 	niceSigNames = makeNiceSigNames()
-	niceNameToSigs := make(map[string]syscall.Signal)
+	niceNameToSigs = make(map[string]syscall.Signal)
 	for sig, name := range niceSigNames {
 		niceNameToSigs[name] = sig
 	}
 }
 
+type listener struct {
+	listener net.Listener
+	spec     string // path or port spec
+}
+
 type Config interface {
 	Args() []string
 	Command() string
-	Dir() string             // Dirctory to chdir to before executing the command
+	Dir() string             // Directory to chdir to before executing the command
 	Interval() time.Duration // Time between checks for liveness
 	PidFile() string
 	Ports() []string         // Ports to bind to (addr:port or port, so it's a string)
@@ -73,7 +78,7 @@ type Starter struct {
 	dir        string
 	ports      []string
 	paths      []string
-	listeners  []net.Listener
+	listeners  []listener
 	generation int
 	command    string
 	args       []string
@@ -107,7 +112,7 @@ func NewStarter(c Config) (*Starter, error) {
 		command:      c.Command(),
 		dir:          c.Dir(),
 		interval:     c.Interval(),
-		listeners:    make([]net.Listener, len(c.Ports())+len(c.Paths())),
+		listeners:    make([]listener, 0, len(c.Ports())+len(c.Paths())),
 		pidFile:      c.PidFile(),
 		ports:        c.Ports(),
 		paths:        c.Paths(),
@@ -160,7 +165,14 @@ func signame(s os.Signal) string {
 	return "UNKNOWN"
 }
 
+// SigFromName returns the signal corresponding to the given signal name string.
+// If the given name string is not defined, it returns nil.
 func SigFromName(n string) os.Signal {
+	n = strings.ToUpper(n)
+	if strings.HasPrefix(n, "SIG") {
+		n = n[3:] // remove SIG prefix
+	}
+
 	if sig, ok := niceNameToSigs[n]; ok {
 		return sig
 	}
@@ -173,9 +185,9 @@ func setEnv() {
 	}
 
 	m, err := reloadEnv()
-	if err != nil {
+	if err != nil && err != errNoEnv {
 		// do something
-		fmt.Fprintf(os.Stderr, "failed to load from envdir: %s", err)
+		fmt.Fprintf(os.Stderr, "failed to load from envdir: %s\n", err)
 	}
 
 	for k, v := range m {
@@ -183,39 +195,70 @@ func setEnv() {
 	}
 }
 
+func parsePortSpec(addr string) (string, int, error) {
+	i := strings.IndexByte(addr, ':')
+	portPart := ""
+	if i < 0 {
+		portPart = addr
+		addr = ""
+	} else {
+		portPart = addr[i+1:]
+		addr = addr[:i]
+	}
+
+	port, err := strconv.ParseInt(portPart, 10, 64)
+	if err != nil {
+		return "", -1, err
+	}
+
+	return addr, int(port), nil
+}
+
 func (s *Starter) Run() error {
 	defer s.Teardown()
 
 	if s.pidFile != "" {
-		f, err := os.OpenFile(s.pidFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		f, err := os.OpenFile(s.pidFile, os.O_EXCL|os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 		if err != nil {
 			return err
 		}
 
-		fmt.Fprintf(f, "%d", os.Getpid())
-		f.Close()
-	}
-
-	for i, addr := range s.ports {
-		var l net.Listener
-		port, err := strconv.ParseInt(addr, 10, 64)
-		if err == nil { // Looks like port only
-			l, err = net.Listen("tcp4", fmt.Sprintf(":%d", port))
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "failed to listen to :%d:%s\n", port, err)
-				return err
-			}
-		} else {
-			l, err = net.Listen("tcp4", addr)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "failed to listen to %s:%s\n", addr, err)
-				return err
-			}
+		if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX); err != nil {
+			return err
 		}
-		s.listeners[i] = l
+		fmt.Fprintf(f, "%d", os.Getpid())
+		defer func() {
+			os.Remove(f.Name())
+			f.Close()
+		}()
 	}
 
-	for i, path := range s.paths {
+	for _, addr := range s.ports {
+		var l net.Listener
+
+		host, port, err := parsePortSpec(addr)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to parse addr spec '%s': %s", addr, err)
+			return err
+		}
+
+		hostport := fmt.Sprintf("%s:%d", host, port)
+		l, err = net.Listen("tcp4", hostport)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to listen to %s:%s\n", hostport, err)
+			return err
+		}
+
+		spec := ""
+		if host == "" {
+			spec = fmt.Sprintf("%d", port)
+		} else {
+			spec = fmt.Sprintf("%s:%d", host, port)
+		}
+		s.listeners = append(s.listeners, listener{listener: l, spec: spec})
+	}
+
+	for _, path := range s.paths {
 		var l net.Listener
 		if fl, err := os.Lstat(path); err == nil && fl.Mode()&os.ModeSocket == os.ModeSocket {
 			fmt.Fprintf(os.Stderr, "removing existing socket file:%s\n", path)
@@ -231,7 +274,7 @@ func (s *Starter) Run() error {
 			fmt.Fprintf(os.Stderr, "failed to listen file:%s:%s\n", path, err)
 			return err
 		}
-		s.listeners[i+len(s.ports)] = l
+		s.listeners = append(s.listeners, listener{listener: l, spec: path})
 	}
 
 	s.generation = 0
@@ -431,24 +474,22 @@ func (s *Starter) StartWorker(sigCh chan os.Signal, ch chan processState) *os.Pr
 		for i, l := range s.listeners {
 			// file descriptor numbers in ExtraFiles turn out to be
 			// index + 3, so we can just hard code it
-			if i < len(s.ports) {
-				f, err := l.(*net.TCPListener).File()
-				if err != nil {
-					panic(err)
-				}
-				defer f.Close()
-				ports[i] = fmt.Sprintf("%s=%d", s.ports[i], i+3)
-				files[i] = f
-			} else {
-				f, err := l.(*net.UnixListener).File()
-				if err != nil {
-					panic(err)
-				}
-				defer f.Close()
-				ports[i] = fmt.Sprintf("%s=%d", s.paths[i-len(s.ports)], i+3)
-				files[i] = f
+			var f *os.File
+			var err error
+			switch l.listener.(type) {
+			case *net.TCPListener:
+				f, err = l.listener.(*net.TCPListener).File()
+			case *net.UnixListener:
+				f, err = l.listener.(*net.UnixListener).File()
+			default:
+				panic("Unknown listener type")
 			}
-
+			if err != nil {
+				panic(err)
+			}
+			defer f.Close()
+			ports[i] = fmt.Sprintf("%s=%d", l.spec, i+3)
+			files[i] = f
 		}
 		cmd.ExtraFiles = files
 
@@ -525,19 +566,12 @@ func (s *Starter) StartWorker(sigCh chan os.Signal, ch chan processState) *os.Pr
 }
 
 func (s *Starter) Teardown() error {
-	if s.pidFile != "" {
-		os.Remove(s.pidFile)
-	}
-
 	if s.statusFile != "" {
 		os.Remove(s.statusFile)
 	}
 
 	for _, l := range s.listeners {
-		if l == nil {
-			continue
-		}
-		l.Close()
+		l.listener.Close()
 	}
 
 	return nil
