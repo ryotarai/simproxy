@@ -96,11 +96,10 @@ func TestReleaseServer(t *testing.T) {
 	}
 
 	b.ReturnBackend(backends[1])
-
 	expects = []*Backend{
 		backends[1],
-		backends[1],
 		backends[0],
+		backends[1],
 	}
 	for _, e := range expects {
 		s, err := b.PickBackend()

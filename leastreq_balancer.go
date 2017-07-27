@@ -27,23 +27,23 @@ func leastreqStateComparator(a, b interface{}) int {
 
 	delta := float64(itemA.Requests)/float64(itemA.Backend.Weight) -
 		float64(itemB.Requests)/float64(itemB.Backend.Weight)
-	if delta != 0 {
-		if delta < 0.0 {
-			return -1
-		}
+	if delta < 0.0 {
+		return -1
+	} else if delta > 0.0 {
+		return 1
+	}
+
+	delta = float64(itemA.totalRequests)/float64(itemA.Backend.Weight) -
+		float64(itemB.totalRequests)/float64(itemB.Backend.Weight)
+	if delta < 0.0 {
+		return -1
+	} else if delta > 0.0 {
 		return 1
 	}
 
 	d := itemB.Backend.Weight - itemA.Backend.Weight
 	if d != 0 {
 		return d
-	}
-
-	e := itemA.totalRequests - itemB.totalRequests
-	if e < 0 {
-		return -1
-	} else if e > 0 {
-		return 1
 	}
 
 	return itemA.id - itemB.id
