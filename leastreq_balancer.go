@@ -10,9 +10,11 @@ import (
 )
 
 type LeastreqState struct {
-	id       int
 	Requests int
 	Backend  *Backend
+
+	totalRequests int64
+	id            int
 }
 
 func leastreqStateComparator(a, b interface{}) int {
@@ -25,16 +27,26 @@ func leastreqStateComparator(a, b interface{}) int {
 
 	delta := float64(itemA.Requests)/float64(itemA.Backend.Weight) -
 		float64(itemB.Requests)/float64(itemB.Backend.Weight)
-	if delta == 0 {
-		if itemA.id > itemB.id {
-			return 1
+	if delta != 0 {
+		if delta < 0.0 {
+			return -1
 		}
-		return -1
+		return 1
 	}
-	if delta < 0.0 {
-		return -1
+
+	d := itemB.Backend.Weight - itemA.Backend.Weight
+	if d != 0 {
+		return d
 	}
-	return 1
+
+	e := itemA.totalRequests - itemB.totalRequests
+	if e < 0 {
+		return -1
+	} else if e > 0 {
+		return 1
+	}
+
+	return itemA.id - itemB.id
 }
 
 type LeastreqBalancer struct {
@@ -77,6 +89,9 @@ func (b *LeastreqBalancer) PickBackend() (*Backend, error) {
 	item := iter.Value().(*LeastreqState)
 	b.set.Remove(item)
 	item.Requests++
+	// This can cause overflow but it cannot happen practically
+	// because 9223372036854775807/10000rps/60s/60m/24h/356d = 29986514year
+	item.totalRequests++
 	b.set.Add(item)
 
 	return item.Backend, nil
