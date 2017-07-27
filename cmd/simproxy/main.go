@@ -55,6 +55,7 @@ func start(config *Config) {
 	defer w.Close()
 
 	errorLogger := log.New(w, "", log.LstdFlags)
+	errorLogger.Printf("INFO: Simproxy v%s", Version)
 
 	if config.PprofAddr != nil {
 		startPprofServer(*config.PprofAddr)
