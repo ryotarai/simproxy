@@ -1,6 +1,7 @@
 package simproxy
 
 import (
+	"fmt"
 	"sync"
 
 	"errors"
@@ -51,6 +52,14 @@ func NewLeastreqBalancer() *LeastreqBalancer {
 	b.set = treeset.NewWith(leastreqStateComparator)
 
 	return b
+}
+
+// for debugging
+func (b *LeastreqBalancer) printState() {
+	b.set.Each(func(i int, v interface{}) {
+		item := v.(*LeastreqState)
+		fmt.Printf("%d: %+v %+v\n", i, item, item.Backend)
+	})
 }
 
 func (b *LeastreqBalancer) PickBackend() (*Backend, error) {
