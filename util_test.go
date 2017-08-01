@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+
+	"github.com/ryotarai/simproxy/types"
 )
 
 type testServer struct {
@@ -43,14 +45,14 @@ func (s *testServer) handler(w http.ResponseWriter, r *http.Request) {
 }
 
 type dummyBalancer struct {
-	backends []*Backend
+	backends []*types.Backend
 }
 
-func (b *dummyBalancer) AddBackend(be *Backend) {
+func (b *dummyBalancer) AddBackend(be *types.Backend) {
 	b.backends = append(b.backends, be)
 }
 
-func (b *dummyBalancer) RemoveBackend(b1 *Backend) {
+func (b *dummyBalancer) RemoveBackend(b1 *types.Backend) {
 	for i, b2 := range b.backends {
 		if b1 == b2 {
 			b.backends[i] = b.backends[len(b.backends)-1]
@@ -60,10 +62,10 @@ func (b *dummyBalancer) RemoveBackend(b1 *Backend) {
 	}
 }
 
-func (b *dummyBalancer) PickBackend() (*Backend, error) {
+func (b *dummyBalancer) PickBackend() (*types.Backend, error) {
 	return b.backends[0], nil
 }
 
-func (b *dummyBalancer) ReturnBackend(*Backend) {
+func (b *dummyBalancer) ReturnBackend(*types.Backend) {
 	// no impl
 }

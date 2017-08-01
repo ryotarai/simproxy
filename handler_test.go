@@ -7,10 +7,12 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+
+	"github.com/ryotarai/simproxy/types"
 )
 
 func sendTestRequest(u *url.URL, req *http.Request, backendURLHeader string) *http.Response {
-	backend := &Backend{
+	backend := &types.Backend{
 		URL: u,
 	}
 	balancer := &dummyBalancer{}

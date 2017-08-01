@@ -2,6 +2,8 @@ package simproxy
 
 import (
 	"testing"
+
+	"github.com/ryotarai/simproxy/types"
 )
 
 type dummyHealthStateStore struct {
@@ -23,7 +25,7 @@ func (s dummyHealthStateStore) State(string) HealthState {
 func TestCheck(t *testing.T) {
 	ts := newTestServer()
 
-	backend := &Backend{
+	backend := &types.Backend{
 		URL:            ts.url(),
 		HealthcheckURL: ts.url(),
 	}
