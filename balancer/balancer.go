@@ -1,14 +1,16 @@
-package simproxy
+package balancer
 
 import (
 	"fmt"
+
+	"github.com/ryotarai/simproxy/types"
 )
 
 type Balancer interface {
-	AddBackend(*Backend)
-	RemoveBackend(*Backend)
-	PickBackend() (*Backend, error)
-	ReturnBackend(*Backend)
+	AddBackend(*types.Backend)
+	RemoveBackend(*types.Backend)
+	PickBackend() (*types.Backend, error)
+	ReturnBackend(*types.Backend)
 }
 
 func NewBalancer(method string) (Balancer, error) {

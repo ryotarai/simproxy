@@ -1,15 +1,17 @@
-package simproxy
+package balancer
 
 import (
 	"fmt"
 	"net/url"
 	"testing"
+
+	"github.com/ryotarai/simproxy/types"
 )
 
 func TestRetainServer(t *testing.T) {
 	u1, _ := url.Parse("http://127.0.0.1:9000")
 	u2, _ := url.Parse("http://127.0.0.1:9001")
-	backends := []*Backend{
+	backends := []*types.Backend{
 		{URL: u1, Weight: 1},
 		{URL: u2, Weight: 2},
 	}
@@ -18,7 +20,7 @@ func TestRetainServer(t *testing.T) {
 		b.AddBackend(be)
 	}
 
-	expects := []*Backend{
+	expects := []*types.Backend{
 		backends[1],
 		backends[0],
 		backends[1],
@@ -39,7 +41,7 @@ func TestRetainServer(t *testing.T) {
 func TestRetainServerSameWeight(t *testing.T) {
 	u1, _ := url.Parse("http://127.0.0.1:9000")
 	u2, _ := url.Parse("http://127.0.0.1:9001")
-	backends := []*Backend{
+	backends := []*types.Backend{
 		{URL: u1, Weight: 1},
 		{URL: u2, Weight: 1},
 	}
@@ -48,7 +50,7 @@ func TestRetainServerSameWeight(t *testing.T) {
 		b.AddBackend(be)
 	}
 
-	expects := []*Backend{
+	expects := []*types.Backend{
 		backends[0],
 		backends[1],
 		backends[0],
@@ -70,7 +72,7 @@ func TestRetainServerSameWeight(t *testing.T) {
 func TestReleaseServer(t *testing.T) {
 	u1, _ := url.Parse("http://127.0.0.1:9000")
 	u2, _ := url.Parse("http://127.0.0.1:9001")
-	backends := []*Backend{
+	backends := []*types.Backend{
 		{URL: u1, Weight: 1},
 		{URL: u2, Weight: 2},
 	}
@@ -79,7 +81,7 @@ func TestReleaseServer(t *testing.T) {
 		b.AddBackend(be)
 	}
 
-	expects := []*Backend{
+	expects := []*types.Backend{
 		backends[1],
 		backends[0],
 		backends[1],
@@ -96,7 +98,7 @@ func TestReleaseServer(t *testing.T) {
 	}
 
 	b.ReturnBackend(backends[1])
-	expects = []*Backend{
+	expects = []*types.Backend{
 		backends[1],
 		backends[0],
 		backends[1],
@@ -120,7 +122,7 @@ func BenchmarkPickBackend1000(b *testing.B) {
 		if err != nil {
 			b.Error(err)
 		}
-		balancer.AddBackend(&Backend{
+		balancer.AddBackend(&types.Backend{
 			URL:    u,
 			Weight: 1,
 		})
@@ -140,13 +142,13 @@ func BenchmarkReturnBackend1000(b *testing.B) {
 		if err != nil {
 			b.Error(err)
 		}
-		balancer.AddBackend(&Backend{
+		balancer.AddBackend(&types.Backend{
 			URL:    u,
 			Weight: 1,
 		})
 	}
 
-	bes := []*Backend{}
+	bes := []*types.Backend{}
 	for i := 0; i < b.N; i++ {
 		be, err := balancer.PickBackend()
 		if err != nil {

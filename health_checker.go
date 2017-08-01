@@ -5,13 +5,16 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/ryotarai/simproxy/balancer"
+	"github.com/ryotarai/simproxy/types"
 )
 
 type HealthChecker struct {
 	State     HealthStateStore
 	Logger    *log.Logger
-	Backend   *Backend
-	Balancer  Balancer
+	Backend   *types.Backend
+	Balancer  balancer.Balancer
 	Interval  time.Duration
 	FallCount int
 	RiseCount int

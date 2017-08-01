@@ -1,49 +1,53 @@
-package simproxy
+package balancer
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
-	"errors"
-
 	"github.com/emirpasic/gods/sets/treeset"
+	"github.com/ryotarai/simproxy/types"
 )
 
-type LeastreqState struct {
-	Requests int
-	Backend  *Backend
-
+type leastreqState struct {
+	requests      int
+	backend       *types.Backend
 	totalRequests int64
 	id            int
 }
 
 func leastreqStateComparator(a, b interface{}) int {
-	itemA := a.(*LeastreqState)
-	itemB := b.(*LeastreqState)
+	itemA := a.(*leastreqState)
+	itemB := b.(*leastreqState)
+
+	weightA := itemA.backend.Weight
+	weightB := itemB.backend.Weight
 
 	if itemA == itemB {
 		return 0
 	}
 
-	delta := float64(itemA.Requests)/float64(itemA.Backend.Weight) -
-		float64(itemB.Requests)/float64(itemB.Backend.Weight)
+	delta := float64(itemA.requests)/weightA -
+		float64(itemB.requests)/weightB
 	if delta < 0.0 {
 		return -1
 	} else if delta > 0.0 {
 		return 1
 	}
 
-	delta = float64(itemA.totalRequests)/float64(itemA.Backend.Weight) -
-		float64(itemB.totalRequests)/float64(itemB.Backend.Weight)
+	delta = float64(itemA.totalRequests)/weightA -
+		float64(itemB.totalRequests)/weightB
 	if delta < 0.0 {
 		return -1
 	} else if delta > 0.0 {
 		return 1
 	}
 
-	d := itemB.Backend.Weight - itemA.Backend.Weight
-	if d != 0 {
-		return d
+	delta = itemB.backend.Weight - itemA.backend.Weight
+	if delta < 0.0 {
+		return -1
+	} else if delta > 0.0 {
+		return 1
 	}
 
 	return itemA.id - itemB.id
@@ -51,7 +55,7 @@ func leastreqStateComparator(a, b interface{}) int {
 
 type LeastreqBalancer struct {
 	set            *treeset.Set
-	stateByBackend map[*Backend]*LeastreqState
+	stateByBackend map[*types.Backend]*leastreqState
 	mutex          *sync.Mutex
 	currentID      int
 }
@@ -59,7 +63,7 @@ type LeastreqBalancer struct {
 func NewLeastreqBalancer() *LeastreqBalancer {
 	b := &LeastreqBalancer{
 		mutex:          &sync.Mutex{},
-		stateByBackend: map[*Backend]*LeastreqState{},
+		stateByBackend: map[*types.Backend]*leastreqState{},
 	}
 	b.set = treeset.NewWith(leastreqStateComparator)
 
@@ -69,12 +73,12 @@ func NewLeastreqBalancer() *LeastreqBalancer {
 // for debugging
 func (b *LeastreqBalancer) printState() {
 	b.set.Each(func(i int, v interface{}) {
-		item := v.(*LeastreqState)
-		fmt.Printf("%d: %+v %+v\n", i, item, item.Backend)
+		item := v.(*leastreqState)
+		fmt.Printf("%d: %+v %+v\n", i, item, item.backend)
 	})
 }
 
-func (b *LeastreqBalancer) PickBackend() (*Backend, error) {
+func (b *LeastreqBalancer) PickBackend() (*types.Backend, error) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
@@ -86,18 +90,18 @@ func (b *LeastreqBalancer) PickBackend() (*Backend, error) {
 	if !iter.First() {
 		return nil, nil
 	}
-	item := iter.Value().(*LeastreqState)
+	item := iter.Value().(*leastreqState)
 	b.set.Remove(item)
-	item.Requests++
+	item.requests++
 	// This can cause overflow but it cannot happen practically
 	// because 9223372036854775807/10000rps/60s/60m/24h/356d = 29986514year
 	item.totalRequests++
 	b.set.Add(item)
 
-	return item.Backend, nil
+	return item.backend, nil
 }
 
-func (b *LeastreqBalancer) ReturnBackend(backend *Backend) {
+func (b *LeastreqBalancer) ReturnBackend(backend *types.Backend) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
@@ -107,13 +111,13 @@ func (b *LeastreqBalancer) ReturnBackend(backend *Backend) {
 	}
 
 	b.set.Remove(item)
-	if item.Requests > 0 {
-		item.Requests--
+	if item.requests > 0 {
+		item.requests--
 	}
 	b.set.Add(item)
 }
 
-func (b *LeastreqBalancer) AddBackend(backend *Backend) {
+func (b *LeastreqBalancer) AddBackend(backend *types.Backend) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
@@ -122,10 +126,10 @@ func (b *LeastreqBalancer) AddBackend(backend *Backend) {
 		return
 	}
 
-	item := &LeastreqState{
+	item := &leastreqState{
 		id:       b.currentID,
-		Requests: 0,
-		Backend:  backend,
+		requests: 0,
+		backend:  backend,
 	}
 	b.currentID++
 
@@ -133,7 +137,7 @@ func (b *LeastreqBalancer) AddBackend(backend *Backend) {
 	b.stateByBackend[backend] = item
 }
 
-func (b *LeastreqBalancer) RemoveBackend(backend *Backend) {
+func (b *LeastreqBalancer) RemoveBackend(backend *types.Backend) {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 

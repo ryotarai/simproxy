@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ryotarai/simproxy"
+	"github.com/ryotarai/simproxy/balancer"
 	"github.com/ryotarai/simproxy/handler"
 )
 
@@ -61,7 +62,7 @@ func start(config *Config) {
 		startPprofServer(*config.PprofAddr)
 	}
 
-	balancer, err := simproxy.NewBalancer(*config.BalancingMethod)
+	balancer, err := balancer.NewBalancer(*config.BalancingMethod)
 	if err != nil {
 		errorLogger.Fatal(err)
 	}

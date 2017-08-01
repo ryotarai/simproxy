@@ -6,7 +6,7 @@ import (
 
 	"time"
 
-	"github.com/ryotarai/simproxy"
+	"github.com/ryotarai/simproxy/types"
 	"gopkg.in/go-playground/validator.v9"
 	"gopkg.in/yaml.v2"
 )
@@ -40,8 +40,8 @@ type HealthcheckConfig struct {
 }
 
 type BackendConfig struct {
-	URL    *string `yaml:"url" validate:"required"`
-	Weight *int    `yaml:"weight" validate:"required"`
+	URL    *string  `yaml:"url" validate:"required"`
+	Weight *float64 `yaml:"weight" validate:"required"`
 }
 
 type AccessLogConfig struct {
@@ -75,20 +75,20 @@ func (c *Config) Validate() error {
 	return err
 }
 
-func (c *Config) BuildBackends() ([]*simproxy.Backend, error) {
+func (c *Config) BuildBackends() ([]*types.Backend, error) {
 	hcPath, err := url.Parse(*c.Healthcheck.Path)
 	if err != nil {
 		return nil, err
 	}
 
-	backends := []*simproxy.Backend{}
+	backends := []*types.Backend{}
 	for _, b := range c.Backends {
 		url, err := url.Parse(*b.URL)
 		if err != nil {
 			return nil, err
 		}
 
-		b2 := &simproxy.Backend{
+		b2 := &types.Backend{
 			URL:            url,
 			HealthcheckURL: url.ResolveReference(hcPath),
 			Weight:         *b.Weight,

@@ -1,4 +1,4 @@
-package simproxy
+package types
 
 import (
 	"net/url"
@@ -7,7 +7,7 @@ import (
 type Backend struct {
 	URL            *url.URL
 	HealthcheckURL *url.URL
-	Weight         int
+	Weight         float64
 }
 
 // GetURL satisfies handler.Backend interface

@@ -5,11 +5,13 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/ryotarai/simproxy/balancer"
 	"github.com/ryotarai/simproxy/handler"
+	"github.com/ryotarai/simproxy/types"
 )
 
 type Handler struct {
-	Balancer            Balancer
+	Balancer            balancer.Balancer
 	Logger              *log.Logger
 	AccessLogger        handler.AccessLogger
 	BackendURLHeader    string
@@ -52,7 +54,7 @@ func (h *Handler) pickBackend() (handler.Backend, error) {
 }
 
 func (h *Handler) afterRoundTrip(b handler.Backend) {
-	b2, ok := b.(*Backend)
+	b2, ok := b.(*types.Backend)
 	if !ok {
 		panic(fmt.Sprintf("%#v is not Backend", b2))
 	}
