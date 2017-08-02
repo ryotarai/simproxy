@@ -65,4 +65,4 @@ write_timeout: 10s
 append_x_forwarded_for: true
 
 # pprof_addr: enable pprof/http for profiling (optional)
-pprof_addr: '127.0.0.1:8100'
+pprof_addr: '127.0.0.1:6060'
