@@ -18,6 +18,7 @@ type Handler struct {
 	Transport           *http.Transport
 	EnableBackendTrace  bool
 	AppendXForwardedFor bool
+	EnableBufferPool    bool
 
 	handler http.Handler
 }
@@ -28,7 +29,11 @@ func (h *Handler) Setup() {
 		transport = h.Transport
 	}
 
-	bufferPool := NewBufferPool(32 * 1024)
+	var bufferPool handler.BufferPool
+	if h.EnableBufferPool {
+		h.Logger.Println("INFO: using buffer pool")
+		bufferPool = NewBufferPool(32 * 1024)
+	}
 
 	h.handler = &handler.ReverseProxy{
 		AccessLogger:        h.AccessLogger,

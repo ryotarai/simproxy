@@ -156,6 +156,7 @@ func start(config *Config) {
 		EnableBackendTrace:  config.EnableBackendTrace,
 		Transport:           transport,
 		AppendXForwardedFor: config.AppendXForwardedFor,
+		EnableBufferPool:    config.EnableBufferPool,
 	}
 	handler.Setup()
 
