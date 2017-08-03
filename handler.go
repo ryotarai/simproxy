@@ -28,6 +28,8 @@ func (h *Handler) Setup() {
 		transport = h.Transport
 	}
 
+	bufferPool := NewBufferPool(32 * 1024)
+
 	h.handler = &handler.ReverseProxy{
 		AccessLogger:        h.AccessLogger,
 		ErrorLog:            h.Logger,
@@ -35,6 +37,7 @@ func (h *Handler) Setup() {
 		Transport:           transport,
 		EnableClientTrace:   h.EnableBackendTrace,
 		AppendXForwardedFor: h.AppendXForwardedFor,
+		BufferPool:          bufferPool,
 
 		PickBackend:    h.pickBackend,
 		AfterRoundTrip: h.afterRoundTrip,
