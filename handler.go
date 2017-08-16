@@ -1,14 +1,12 @@
 package simproxy
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/ryotarai/simproxy/balancer"
 	"github.com/ryotarai/simproxy/bufferpool"
 	"github.com/ryotarai/simproxy/handler"
-	"github.com/ryotarai/simproxy/types"
 )
 
 type Handler struct {
@@ -44,28 +42,10 @@ func (h *Handler) Setup() {
 		EnableClientTrace:   h.EnableBackendTrace,
 		AppendXForwardedFor: h.AppendXForwardedFor,
 		BufferPool:          bufferPool,
-
-		PickBackend:    h.pickBackend,
-		AfterRoundTrip: h.afterRoundTrip,
+		Balancer:            h.Balancer,
 	}
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.handler.ServeHTTP(w, r)
-}
-
-func (h *Handler) pickBackend() (handler.Backend, error) {
-	backend, err := h.Balancer.PickBackend()
-	if err != nil {
-		return nil, err
-	}
-	return backend, nil
-}
-
-func (h *Handler) afterRoundTrip(b handler.Backend) {
-	b2, ok := b.(*types.Backend)
-	if !ok {
-		panic(fmt.Sprintf("%#v is not Backend", b2))
-	}
-	h.Balancer.ReturnBackend(b2)
 }

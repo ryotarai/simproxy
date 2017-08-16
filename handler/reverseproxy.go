@@ -20,6 +20,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/ryotarai/simproxy/types"
 )
 
 // onExitFlushLoop is a callback set by tests to detect the state of the
@@ -36,14 +38,18 @@ type Backend interface {
 	GetURL() *url.URL
 }
 
+type balancer interface {
+	PickBackend() (*types.Backend, error)
+	ReturnBackend(*types.Backend)
+}
+
 // ReverseProxy is an HTTP Handler that takes an incoming request and
 // sends it to another server, proxying the response back to the
 // client.
 type ReverseProxy struct {
 	AccessLogger AccessLogger
 
-	PickBackend         func() (Backend, error)
-	AfterRoundTrip      func(Backend)
+	Balancer            balancer
 	BackendURLHeader    string
 	EnableClientTrace   bool
 	AppendXForwardedFor bool
@@ -163,7 +169,7 @@ func (p *ReverseProxy) serveHTTP(rw http.ResponseWriter, req *http.Request, logR
 		outreq.Body = nil // Issue 16036: nil Body for http.Transport retries
 	}
 
-	backend, err := p.PickBackend()
+	backend, err := p.Balancer.PickBackend()
 	if err != nil {
 		p.logf("http: proxy error: %v", err)
 		rw.WriteHeader(http.StatusBadGateway)
@@ -226,7 +232,7 @@ func (p *ReverseProxy) serveHTTP(rw http.ResponseWriter, req *http.Request, logR
 	}
 
 	res, err := transport.RoundTrip(outreq)
-	p.AfterRoundTrip(backend)
+	p.Balancer.ReturnBackend(backend)
 
 	if err != nil {
 		p.logf("http: proxy error: %v", err)
