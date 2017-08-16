@@ -1,4 +1,4 @@
-package simproxy
+package bufferpool
 
 import (
 	"sync"
@@ -10,7 +10,7 @@ type BufferPool struct {
 	mutex   sync.Mutex
 }
 
-func NewBufferPool(size int) *BufferPool {
+func New(size int) *BufferPool {
 	return &BufferPool{
 		size:    size,
 		buffers: [][]byte{},

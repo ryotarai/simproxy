@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/ryotarai/simproxy/balancer"
+	"github.com/ryotarai/simproxy/bufferpool"
 	"github.com/ryotarai/simproxy/handler"
 	"github.com/ryotarai/simproxy/types"
 )
@@ -32,7 +33,7 @@ func (h *Handler) Setup() {
 	var bufferPool handler.BufferPool
 	if h.EnableBufferPool {
 		h.Logger.Println("INFO: using buffer pool")
-		bufferPool = NewBufferPool(32 * 1024)
+		bufferPool = bufferpool.New(32 * 1024)
 	}
 
 	h.handler = &handler.ReverseProxy{
