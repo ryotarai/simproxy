@@ -13,14 +13,14 @@ import (
 
 type Proxy struct {
 	Logger            *log.Logger
-	Handler           *Handler
+	Handler           http.Handler
 	ReadTimeout       time.Duration
 	ReadHeaderTimeout time.Duration
 	WriteTimeout      time.Duration
 	ShutdownTimeout   time.Duration
 }
 
-func NewProxy(handler *Handler, logger *log.Logger) *Proxy {
+func NewProxy(handler http.Handler, logger *log.Logger) *Proxy {
 	return &Proxy{
 		Logger:  logger,
 		Handler: handler,

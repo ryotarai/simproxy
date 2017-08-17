@@ -11,6 +11,7 @@ import (
 	"github.com/ryotarai/simproxy"
 	"github.com/ryotarai/simproxy/accesslogger"
 	"github.com/ryotarai/simproxy/balancer"
+	"github.com/ryotarai/simproxy/bufferpool"
 	"github.com/ryotarai/simproxy/handler"
 )
 
@@ -149,17 +150,21 @@ func start(config *Config) {
 		ExpectContinueTimeout: 1 * time.Second,
 	}
 
-	handler := &simproxy.Handler{
+	var bufferPool handler.BufferPool
+	if config.EnableBufferPool {
+		bufferPool = bufferpool.New(32 * 1024)
+	}
+
+	handler := &handler.ReverseProxy{
 		Balancer:            balancer,
-		Logger:              errorLogger,
+		ErrorLog:            errorLogger,
 		AccessLogger:        accessLogger,
 		BackendURLHeader:    backendURLHeader,
-		EnableBackendTrace:  config.EnableBackendTrace,
+		EnableClientTrace:   config.EnableBackendTrace,
 		Transport:           transport,
 		AppendXForwardedFor: config.AppendXForwardedFor,
-		EnableBufferPool:    config.EnableBufferPool,
+		BufferPool:          bufferPool,
 	}
-	handler.Setup()
 
 	proxy := simproxy.NewProxy(handler, errorLogger)
 	if config.ReadTimeout != nil {

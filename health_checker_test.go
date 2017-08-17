@@ -3,6 +3,7 @@ package simproxy
 import (
 	"testing"
 
+	"github.com/ryotarai/simproxy/testutil"
 	"github.com/ryotarai/simproxy/types"
 )
 
@@ -23,14 +24,14 @@ func (s dummyHealthStateStore) State(string) HealthState {
 }
 
 func TestCheck(t *testing.T) {
-	ts := newTestServer()
+	ts := testutil.NewTestServer()
 
 	backend := &types.Backend{
-		URL:            ts.url(),
-		HealthcheckURL: ts.url(),
+		URL:            ts.URL(),
+		HealthcheckURL: ts.URL(),
 	}
 
-	balancer := &dummyBalancer{}
+	balancer := &testutil.DummyBalancer{}
 
 	c := &HealthChecker{
 		State:     dummyHealthStateStore{},
@@ -42,20 +43,20 @@ func TestCheck(t *testing.T) {
 	}
 
 	c.check()
-	if len(balancer.backends) != 0 {
+	if len(balancer.Backends) != 0 {
 		t.Error("expected that no backend is registered")
 	}
 	c.check()
-	if len(balancer.backends) != 1 || balancer.backends[0] != backend {
+	if len(balancer.Backends) != 1 || balancer.Backends[0] != backend {
 		t.Error("expected that backend is registered")
 	}
-	ts.status = 500
+	ts.Status = 500
 	c.check()
-	if len(balancer.backends) != 1 || balancer.backends[0] != backend {
+	if len(balancer.Backends) != 1 || balancer.Backends[0] != backend {
 		t.Error("expected that backend is registered")
 	}
 	c.check()
-	if len(balancer.backends) != 0 {
+	if len(balancer.Backends) != 0 {
 		t.Error("expected that no backend is registered")
 	}
 }
