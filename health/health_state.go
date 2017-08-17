@@ -1,4 +1,4 @@
-package simproxy
+package health
 
 import (
 	"bufio"

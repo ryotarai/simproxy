@@ -8,11 +8,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/ryotarai/simproxy"
 	"github.com/ryotarai/simproxy/accesslogger"
 	"github.com/ryotarai/simproxy/balancer"
 	"github.com/ryotarai/simproxy/bufferpool"
 	"github.com/ryotarai/simproxy/handler"
+	"github.com/ryotarai/simproxy/health"
 	"github.com/ryotarai/simproxy/listener"
 )
 
@@ -70,7 +70,7 @@ func start(config *Config) {
 		errorLogger.Fatal(err)
 	}
 
-	healthStore := simproxy.NewHealthStateFileStore(*config.Healthcheck.StateFile)
+	healthStore := health.NewHealthStateFileStore(*config.Healthcheck.StateFile)
 	err = healthStore.Load()
 	if err != nil {
 		errorLogger.Fatal(err)
@@ -91,7 +91,7 @@ func start(config *Config) {
 	}
 
 	for _, b := range backends {
-		healthchecker := &simproxy.HealthChecker{
+		healthchecker := &health.HealthChecker{
 			State:     healthStore,
 			Logger:    errorLogger,
 			Backend:   b,
@@ -192,7 +192,7 @@ func start(config *Config) {
 		shutdownTimeout = *config.ShutdownTimeout
 	}
 
-	err = simproxy.ServeAndHandleSignal(server, listener, shutdownTimeout)
+	err = serveHTTPAndHandleSignal(server, listener, shutdownTimeout)
 	if err != nil {
 		errorLogger.Fatal(err)
 	}

@@ -1,4 +1,4 @@
-package simproxy
+package main
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func ServeAndHandleSignal(server http.Server, listener net.Listener, timeout time.Duration) error {
+func serveHTTPAndHandleSignal(server http.Server, listener net.Listener, timeout time.Duration) error {
 	go func() {
 		server.Serve(listener)
 	}()
