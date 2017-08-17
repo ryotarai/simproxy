@@ -6,7 +6,7 @@ import (
 )
 
 func TestBufferPool(t *testing.T) {
-	p := NewBufferPool(1024)
+	p := New(1024)
 	b1 := p.Get()
 	if len(b1) != 1024 {
 		t.Errorf("unexpected buffer size %d", len(b1))
