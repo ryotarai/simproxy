@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"fmt"
@@ -16,10 +16,10 @@ import (
 	"github.com/ryotarai/simproxy/listener"
 )
 
-func main() {
+func Start(args []string) {
 	options := CommandLineOptions{}
-	fs := setupFlagSet(os.Args[0], &options)
-	err := fs.Parse(os.Args[1:])
+	fs := setupFlagSet(args[0], &options)
+	err := fs.Parse(args[1:])
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -17,7 +17,7 @@ Pre-built binaries are available at https://github.com/ryotarai/simproxy/release
 Or you can install by `go get`:
 
 ```
-$ go get github.com/ryotarai/simproxy/cmd/simproxy
+$ go get github.com/ryotarai/simproxy
 ```
 
 ## Usage

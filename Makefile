@@ -5,13 +5,13 @@ default: build
 
 # build generate binary on './bin' directory.
 build: 
-	go build -ldflags "-X main.GitCommit=$(COMMIT)" -o bin/simproxy ./cmd/simproxy
+	go build -ldflags "-X main.GitCommit=$(COMMIT)" -o bin/simproxy .
 
 build.dummyhttp: 
 	go build -ldflags "-X main.GitCommit=$(COMMIT)" -o bin/dummyhttp ./cmd/dummyhttp
 
 buildx:
-	gox -ldflags "-X main.GitCommit=$(COMMIT)" -output "bin/v$(VERSION)/{{.Dir}}_{{.OS}}_{{.Arch}}_$(VERSION)" -arch "amd64" -os "linux darwin" ./cmd/simproxy
+	gox -ldflags "-X main.GitCommit=$(COMMIT)" -output "bin/v$(VERSION)/{{.Dir}}_{{.OS}}_{{.Arch}}_$(VERSION)" -arch "amd64" -os "linux darwin" .
 
 test:
 	go test -v $(shell go list ./... | grep -v /vendor/)

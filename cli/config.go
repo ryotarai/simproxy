@@ -1,9 +1,8 @@
-package main
+package cli
 
 import (
 	"io/ioutil"
 	"net/url"
-
 	"time"
 
 	"github.com/ryotarai/simproxy/types"
