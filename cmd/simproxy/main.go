@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ryotarai/simproxy"
+	"github.com/ryotarai/simproxy/accesslogger"
 	"github.com/ryotarai/simproxy/balancer"
 	"github.com/ryotarai/simproxy/handler"
 )
@@ -111,7 +112,7 @@ func start(config *Config) {
 		}
 		defer f.Close()
 
-		accessLogger, err = simproxy.NewAccessLogger(*config.AccessLog.Format, f, config.AccessLog.Fields)
+		accessLogger, err = accesslogger.New(*config.AccessLog.Format, f, config.AccessLog.Fields)
 		if err != nil {
 			errorLogger.Fatal(err)
 		}

@@ -1,10 +1,9 @@
-package simproxy
+package accesslogger
 
 import (
 	"fmt"
-	"strings"
-
 	"io"
+	"strings"
 
 	"github.com/ryotarai/simproxy/handler"
 )

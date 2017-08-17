@@ -1,4 +1,4 @@
-package simproxy
+package accesslogger
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/ryotarai/simproxy/handler"
 )
 
-func NewAccessLogger(format string, w io.Writer, fields []string) (handler.AccessLogger, error) {
+func New(format string, w io.Writer, fields []string) (handler.AccessLogger, error) {
 	switch format {
 	case "ltsv":
 		return &LTSVAccessLogger{
