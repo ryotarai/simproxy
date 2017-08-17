@@ -1,4 +1,4 @@
-package simproxy
+package listener
 
 import (
 	"fmt"
@@ -8,8 +8,8 @@ import (
 	serverstarter "github.com/lestrrat/go-server-starter/listener"
 )
 
-// listenFromDescription creates a listener from server_starter or new TCP sock
-func listenFromDescription(desc string) (net.Listener, error) {
+// Listen creates a listener from server_starter or new TCP sock
+func Listen(desc string) (net.Listener, error) {
 	if strings.HasPrefix(desc, "SERVER_STARTER:") {
 		return listenServerStarter(strings.TrimPrefix(desc, "SERVER_STARTER:"))
 	}

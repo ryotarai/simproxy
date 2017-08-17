@@ -13,6 +13,7 @@ import (
 	"github.com/ryotarai/simproxy/balancer"
 	"github.com/ryotarai/simproxy/bufferpool"
 	"github.com/ryotarai/simproxy/handler"
+	"github.com/ryotarai/simproxy/listener"
 )
 
 func main() {
@@ -166,20 +167,32 @@ func start(config *Config) {
 		BufferPool:          bufferPool,
 	}
 
-	proxy := simproxy.NewProxy(handler, errorLogger)
+	server := http.Server{
+		ErrorLog: errorLogger,
+		Handler:  handler,
+	}
 	if config.ReadTimeout != nil {
-		proxy.ReadTimeout = *config.ReadTimeout
+		server.ReadTimeout = *config.ReadTimeout
 	}
 	if config.ReadHeaderTimeout != nil {
-		proxy.ReadHeaderTimeout = *config.ReadHeaderTimeout
+		server.ReadHeaderTimeout = *config.ReadHeaderTimeout
 	}
 	if config.WriteTimeout != nil {
-		proxy.WriteTimeout = *config.WriteTimeout
+		server.WriteTimeout = *config.WriteTimeout
 	}
+
+	listener, err := listener.Listen(*config.Listen)
+	if err != nil {
+		errorLogger.Fatal(err)
+	}
+	defer listener.Close()
+
+	var shutdownTimeout time.Duration
 	if config.ShutdownTimeout != nil {
-		proxy.ShutdownTimeout = *config.ShutdownTimeout
+		shutdownTimeout = *config.ShutdownTimeout
 	}
-	err = proxy.ListenAndServe(*config.Listen)
+
+	err = simproxy.ServeAndHandleSignal(server, listener, shutdownTimeout)
 	if err != nil {
 		errorLogger.Fatal(err)
 	}
