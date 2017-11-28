@@ -39,6 +39,38 @@ https://github.com/ryotarai/simproxy/blob/master/config.example.yml
 
 ## Development
 
+### Test
+
+```
+$ make test
+```
+
+### Build
+
+```
+$ make build
+$ ls bin/simproxy
+bin/simproxy
+```
+
+### Cross Build
+
+Make sure that [gox](https://github.com/mitchellh/gox) is installed.
+
+```
+$ make crossbuild
+$ tree bin
+bin
+└── v0.1.4
+    ├── simproxy_darwin_amd64_0.1.4
+    └── simproxy_linux_amd64_0.1.4
+```
+
+### Release
+
+1. Bump up the version in `cli/version.go` and commit it
+2. Run `make release` ([ghr](https://github.com/tcnksm/ghr) is required)
+
 ### Dependencies
 
 Dependencies are managed by [dep](https://github.com/golang/dep)
