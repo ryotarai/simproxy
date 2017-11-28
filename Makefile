@@ -1,5 +1,5 @@
 COMMIT = $(shell git describe --always)
-VERSION = $(shell grep Version cmd/simproxy/version.go | sed -E 's/.*"(.+)"$$/\1/')
+VERSION = $(shell grep Version cli/version.go | sed -E 's/.*"(.+)"$$/\1/')
 
 default: build
 
@@ -10,7 +10,7 @@ build:
 build.dummyhttp: 
 	go build -ldflags "-X main.GitCommit=$(COMMIT)" -o bin/dummyhttp ./cmd/dummyhttp
 
-buildx:
+crossbuild:
 	gox -ldflags "-X main.GitCommit=$(COMMIT)" -output "bin/v$(VERSION)/{{.Dir}}_{{.OS}}_{{.Arch}}_$(VERSION)" -arch "amd64" -os "linux darwin" .
 
 test:
@@ -19,7 +19,7 @@ test:
 bench:
 	go test -bench .
 
-release: buildx
+release: crossbuild
 	git tag v$(VERSION)
 	git push origin v$(VERSION)
 	ghr v$(VERSION) bin/v$(VERSION)/
