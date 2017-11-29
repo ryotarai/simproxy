@@ -21,7 +21,8 @@ func (b dummyBalancer) Metrics() map[*types.Backend]map[string]int64 {
 		panic(err)
 	}
 	be := &types.Backend{
-		URL: u,
+		URL:    u,
+		Weight: 123,
 	}
 	m[be] = map[string]int64{
 		"key1": 1,
@@ -51,5 +52,5 @@ func TestHandlerMetrics(t *testing.T) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	assert.Nil(t, err)
-	assert.Equal(t, "simproxy_key1{backend=http://example.com:8080/foo/} 1\nsimproxy_key2{backend=http://example.com:8080/foo/} 2\n", string(body))
+	assert.Equal(t, "simproxy_backend_weight{backend=http://example.com:8080/foo/} 123.000000\nsimproxy_key1{backend=http://example.com:8080/foo/} 1\nsimproxy_key2{backend=http://example.com:8080/foo/} 2\n", string(body))
 }
