@@ -4,13 +4,34 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
+	"github.com/ryotarai/simproxy/types"
 	"github.com/stretchr/testify/assert"
 )
 
+type dummyBalancer struct {
+}
+
+func (b dummyBalancer) Metrics() map[*types.Backend]map[string]int64 {
+	m := map[*types.Backend]map[string]int64{}
+	u, err := url.Parse("http://example.com:8080/foo/")
+	if err != nil {
+		panic(err)
+	}
+	be := &types.Backend{
+		URL: u,
+	}
+	m[be] = map[string]int64{
+		"key1": 1,
+		"key2": 2,
+	}
+	return m
+}
+
 func TestHandlerNotFound(t *testing.T) {
-	h := NewHandler()
+	h := NewHandler(dummyBalancer{})
 	s := httptest.NewServer(h)
 	defer s.Close()
 
@@ -20,7 +41,7 @@ func TestHandlerNotFound(t *testing.T) {
 }
 
 func TestHandlerMetrics(t *testing.T) {
-	h := NewHandler()
+	h := NewHandler(dummyBalancer{})
 	s := httptest.NewServer(h)
 	defer s.Close()
 
@@ -30,5 +51,5 @@ func TestHandlerMetrics(t *testing.T) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	assert.Nil(t, err)
-	assert.Equal(t, "/metrics\n", string(body))
+	assert.Equal(t, "simproxy_key1{backend=http://example.com:8080/foo/} 1\nsimproxy_key2{backend=http://example.com:8080/foo/} 2\n", string(body))
 }

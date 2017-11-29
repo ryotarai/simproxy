@@ -11,6 +11,7 @@ type Balancer interface {
 	RemoveBackend(*types.Backend)
 	PickBackend() (*types.Backend, error)
 	ReturnBackend(*types.Backend)
+	Metrics() map[*types.Backend]map[string]int64
 }
 
 func NewBalancer(method string) (Balancer, error) {

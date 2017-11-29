@@ -10,10 +10,10 @@ import (
 )
 
 type leastreqState struct {
-	requests      int
-	backend       *types.Backend
-	totalRequests int64
-	id            int
+	backend             *types.Backend
+	outstandingRequests int64
+	totalRequests       int64
+	id                  int
 }
 
 func leastreqStateComparator(a, b interface{}) int {
@@ -27,8 +27,8 @@ func leastreqStateComparator(a, b interface{}) int {
 		return 0
 	}
 
-	delta := float64(itemA.requests)/weightA -
-		float64(itemB.requests)/weightB
+	delta := float64(itemA.outstandingRequests)/weightA -
+		float64(itemB.outstandingRequests)/weightB
 	if delta < 0.0 {
 		return -1
 	} else if delta > 0.0 {
@@ -92,7 +92,7 @@ func (b *LeastreqBalancer) PickBackend() (*types.Backend, error) {
 	}
 	item := iter.Value().(*leastreqState)
 	b.set.Remove(item)
-	item.requests++
+	item.outstandingRequests++
 	// This can cause overflow but it cannot happen practically
 	// because 9223372036854775807/10000rps/60s/60m/24h/356d = 29986514year
 	item.totalRequests++
@@ -111,8 +111,8 @@ func (b *LeastreqBalancer) ReturnBackend(backend *types.Backend) {
 	}
 
 	b.set.Remove(item)
-	if item.requests > 0 {
-		item.requests--
+	if item.outstandingRequests > 0 {
+		item.outstandingRequests--
 	}
 	b.set.Add(item)
 }
@@ -127,9 +127,9 @@ func (b *LeastreqBalancer) AddBackend(backend *types.Backend) {
 	}
 
 	item := &leastreqState{
-		id:       b.currentID,
-		requests: 0,
-		backend:  backend,
+		id:                  b.currentID,
+		outstandingRequests: 0,
+		backend:             backend,
 	}
 	b.currentID++
 
@@ -148,4 +148,18 @@ func (b *LeastreqBalancer) RemoveBackend(backend *types.Backend) {
 
 	b.set.Remove(item)
 	delete(b.stateByBackend, backend)
+}
+
+func (b *LeastreqBalancer) Metrics() map[*types.Backend]map[string]int64 {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	m := map[*types.Backend]map[string]int64{}
+	for be, s := range b.stateByBackend {
+		m[be] = map[string]int64{
+			"total_requests":       s.totalRequests,
+			"outstanding_requests": s.outstandingRequests,
+		}
+	}
+	return m
 }

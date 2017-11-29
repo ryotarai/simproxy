@@ -13,6 +13,7 @@ import (
 	"github.com/ryotarai/simproxy/bufferpool"
 	"github.com/ryotarai/simproxy/handler"
 	"github.com/ryotarai/simproxy/health"
+	"github.com/ryotarai/simproxy/httpapi"
 	"github.com/ryotarai/simproxy/listener"
 )
 
@@ -190,6 +191,11 @@ func start(config *Config) {
 	var shutdownTimeout time.Duration
 	if config.ShutdownTimeout != nil {
 		shutdownTimeout = *config.ShutdownTimeout
+	}
+
+	if config.HTTPAPIAddr != nil {
+		errorLogger.Printf("enabling HTTP API on %s", *config.HTTPAPIAddr)
+		httpapi.Start(*config.HTTPAPIAddr, balancer)
 	}
 
 	err = serveHTTPAndHandleSignal(server, listener, shutdownTimeout)
