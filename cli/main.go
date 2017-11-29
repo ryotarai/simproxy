@@ -53,14 +53,14 @@ func openWritableFile(path string) (*os.File, error) {
 }
 
 func start(config *Config) {
-	w, err := openWritableFile(*config.ErrorLog.Path)
+	w, err := openWritableFile(*config.Log.Path)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer w.Close()
 
-	errorLogger := log.New(w, "", log.LstdFlags)
-	errorLogger.Printf("INFO: Simproxy v%s", Version)
+	logger := log.New(w, "", log.LstdFlags)
+	logger.Printf("INFO: Simproxy v%s", Version)
 
 	if config.PprofAddr != nil {
 		startPprofServer(*config.PprofAddr)
@@ -68,18 +68,18 @@ func start(config *Config) {
 
 	balancer, err := balancer.NewBalancer(*config.BalancingMethod)
 	if err != nil {
-		errorLogger.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	healthStore := health.NewHealthStateFileStore(*config.Healthcheck.StateFile)
 	err = healthStore.Load()
 	if err != nil {
-		errorLogger.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	backends, err := config.BuildBackends()
 	if err != nil {
-		errorLogger.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	backendStrURLs := []string{}
@@ -88,13 +88,13 @@ func start(config *Config) {
 	}
 	err = healthStore.Cleanup(backendStrURLs)
 	if err != nil {
-		errorLogger.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	for _, b := range backends {
 		healthchecker := &health.HealthChecker{
 			State:     healthStore,
-			Logger:    errorLogger,
+			Logger:    logger,
 			Backend:   b,
 			Balancer:  balancer,
 			Interval:  *config.Healthcheck.Interval,
@@ -103,7 +103,7 @@ func start(config *Config) {
 		}
 		err = healthchecker.Start()
 		if err != nil {
-			errorLogger.Fatal(err)
+			logger.Fatal(err)
 		}
 	}
 
@@ -111,13 +111,13 @@ func start(config *Config) {
 	if config.AccessLog != nil {
 		f, err := openWritableFile(*config.AccessLog.Path)
 		if err != nil {
-			errorLogger.Fatal(err)
+			logger.Fatal(err)
 		}
 		defer f.Close()
 
 		accessLogger, err = accesslogger.New(*config.AccessLog.Format, f, config.AccessLog.Fields)
 		if err != nil {
-			errorLogger.Fatal(err)
+			logger.Fatal(err)
 		}
 	}
 
@@ -159,7 +159,7 @@ func start(config *Config) {
 
 	handler := &handler.ReverseProxy{
 		Balancer:            balancer,
-		ErrorLog:            errorLogger,
+		ErrorLog:            logger,
 		AccessLogger:        accessLogger,
 		BackendURLHeader:    backendURLHeader,
 		EnableClientTrace:   config.EnableBackendTrace,
@@ -169,7 +169,7 @@ func start(config *Config) {
 	}
 
 	server := http.Server{
-		ErrorLog: errorLogger,
+		ErrorLog: logger,
 		Handler:  handler,
 	}
 	if config.ReadTimeout != nil {
@@ -184,7 +184,7 @@ func start(config *Config) {
 
 	listener, err := listener.Listen(*config.Listen)
 	if err != nil {
-		errorLogger.Fatal(err)
+		logger.Fatal(err)
 	}
 	defer listener.Close()
 
@@ -194,12 +194,12 @@ func start(config *Config) {
 	}
 
 	if config.HTTPAPIAddr != nil {
-		errorLogger.Printf("enabling HTTP API on %s", *config.HTTPAPIAddr)
+		logger.Printf("enabling HTTP API on %s", *config.HTTPAPIAddr)
 		httpapi.Start(*config.HTTPAPIAddr, balancer)
 	}
 
 	err = serveHTTPAndHandleSignal(server, listener, shutdownTimeout)
 	if err != nil {
-		errorLogger.Fatal(err)
+		logger.Fatal(err)
 	}
 }
