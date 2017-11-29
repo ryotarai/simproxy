@@ -69,3 +69,6 @@ func (b *DummyBalancer) PickBackend() (*types.Backend, error) {
 func (b *DummyBalancer) ReturnBackend(*types.Backend) {
 	// no impl
 }
+func (b *DummyBalancer) Metrics() map[*types.Backend]map[string]int64 {
+	return map[*types.Backend]map[string]int64{}
+}
