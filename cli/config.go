@@ -26,6 +26,7 @@ type Config struct {
 	MaxIdleConns        *int               `yaml:"max_idle_conns"`
 	AppendXForwardedFor bool               `yaml:"append_x_forwarded_for"`
 	EnableBufferPool    bool               `yaml:"enable_buffer_pool"`
+	HTTPAPIAddr         *string            `yaml:"http_api_addr"`
 
 	EnableBackendTrace bool    `yaml:"enable_backend_trace"`
 	PprofAddr          *string `yaml:"pprof_addr"`

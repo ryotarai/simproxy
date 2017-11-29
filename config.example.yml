@@ -70,3 +70,6 @@ pprof_addr: '127.0.0.1:6060'
 # enable_buffer_pool: enable buffer pool for copying response
 #   If true, buffer ([]byte) will be reused for multiple responses
 enable_buffer_pool: false
+
+# http_api_addr: listen address for HTTP API endpoint
+http_api_addr: '127.0.0.1:8090'

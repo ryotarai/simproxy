@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
+  version = "v1.1.0"
+
+[[projects]]
   name = "github.com/emirpasic/gods"
   packages = ["containers","sets","sets/treeset","trees","trees/redblacktree","utils"]
   revision = "f6c17b524822278a87e3b3bd809fec33b51f5b46"
@@ -26,6 +32,18 @@
   revision = "f9cb0b066498d26a90fd918fe265adbb0ea02bcf"
 
 [[projects]]
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/stretchr/testify"
+  packages = ["assert"]
+  revision = "69483b4bd14f5845b5a1e55bca19e954e827f1d0"
+  version = "v1.1.4"
+
+[[projects]]
   name = "gopkg.in/go-playground/validator.v9"
   packages = ["."]
   revision = "fb68f39656d7ebf8aa339ad4917aa0c260ecc237"
@@ -40,6 +58,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ca92990e0272734b075eab41181657495b7c395f131298d83c509b94f4965a56"
+  inputs-digest = "03957ec3e2f6ccfa6a217ccf32e9215e2ae48fc76aaee768ddd8adec19cd41ad"
   solver-name = "gps-cdcl"
   solver-version = 1
