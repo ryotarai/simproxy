@@ -5,36 +5,24 @@ import (
 )
 
 type BufferPool struct {
-	size    int
-	buffers [][]byte
-	mutex   sync.Mutex
+	pool sync.Pool
 }
 
 func New(size int) *BufferPool {
 	return &BufferPool{
-		size:    size,
-		buffers: [][]byte{},
-		mutex:   sync.Mutex{},
+		pool: sync.Pool{
+			New: func() interface{} {
+				return make([]byte, size)
+			},
+		},
 	}
 }
 
 func (p *BufferPool) Get() []byte {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-
-	l := len(p.buffers)
-	if l > 0 {
-		b := p.buffers[l-1]
-		p.buffers = p.buffers[:l-1]
-		return b
-	}
-
-	return make([]byte, p.size)
+	b := p.pool.Get()
+	return b.([]byte)
 }
 
 func (p *BufferPool) Put(b []byte) {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-
-	p.buffers = append(p.buffers, b)
+	p.pool.Put(b)
 }
