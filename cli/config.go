@@ -52,7 +52,8 @@ type AccessLogConfig struct {
 }
 
 type LogConfig struct {
-	Path *string `yaml:"path" validate:"required"`
+	Path  *string `yaml:"path" validate:"required"`
+	Level *string `yaml:"level"`
 }
 
 func LoadConfigFromYAML(path string) (*Config, error) {

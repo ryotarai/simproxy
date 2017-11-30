@@ -18,8 +18,9 @@ access_log:
   fields: ['time', 'time_nsec', 'status', 'size', 'reqtime_nsec', 'backend', 'path', 'query', 'method']
 
 # error_log (required)
-error_log:
+log:
   path: '/dev/stderr'
+  level: 'debug'
 
 # heathcheck: Healthcheck to determine whether backends are alive or dead (required)
 healthcheck:

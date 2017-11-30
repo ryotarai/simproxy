@@ -15,6 +15,7 @@ import (
 	"github.com/ryotarai/simproxy/health"
 	"github.com/ryotarai/simproxy/httpapi"
 	"github.com/ryotarai/simproxy/listener"
+	"github.com/sirupsen/logrus"
 )
 
 func Start(args []string) {
@@ -22,7 +23,8 @@ func Start(args []string) {
 	fs := setupFlagSet(args[0], &options)
 	err := fs.Parse(args[1:])
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	if options.ShowVersion {
@@ -37,12 +39,14 @@ func Start(args []string) {
 
 	config, err := LoadConfigFromYAML(options.Config)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	err = config.Validate()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	start(config)
@@ -52,15 +56,31 @@ func openWritableFile(path string) (*os.File, error) {
 	return os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 }
 
-func start(config *Config) {
-	w, err := openWritableFile(*config.Log.Path)
+func setupLogger(path string, level *string) *logrus.Logger {
+	w, err := openWritableFile(path)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	defer w.Close()
 
-	logger := log.New(w, "", log.LstdFlags)
-	logger.Printf("INFO: Simproxy v%s", Version)
+	logger := logrus.New()
+	logger.Out = w
+
+	l := logrus.InfoLevel // default
+	if level != nil {
+		l, err = logrus.ParseLevel(*level)
+		if err != nil {
+			l = logrus.InfoLevel
+			logger.WithField("err", err).Warn("Setting log level to INFO")
+		}
+	}
+	logger.Level = l
+
+	return logger
+}
+
+func start(config *Config) {
+	logger := setupLogger(*config.Log.Path, config.Log.Level)
+	logger.Infof("Starting Simproxy v%s", Version)
 
 	if config.PprofAddr != nil {
 		startPprofServer(*config.PprofAddr)
@@ -159,7 +179,7 @@ func start(config *Config) {
 
 	handler := &handler.ReverseProxy{
 		Balancer:            balancer,
-		ErrorLog:            logger,
+		ErrorLog:            log.New(logger.WriterLevel(logrus.ErrorLevel), "", 0),
 		AccessLogger:        accessLogger,
 		BackendURLHeader:    backendURLHeader,
 		EnableClientTrace:   config.EnableBackendTrace,
@@ -169,7 +189,7 @@ func start(config *Config) {
 	}
 
 	server := http.Server{
-		ErrorLog: logger,
+		ErrorLog: log.New(logger.WriterLevel(logrus.ErrorLevel), "", 0),
 		Handler:  handler,
 	}
 	if config.ReadTimeout != nil {
@@ -194,7 +214,7 @@ func start(config *Config) {
 	}
 
 	if config.HTTPAPIAddr != nil {
-		logger.Printf("enabling HTTP API on %s", *config.HTTPAPIAddr)
+		logger.Infof("Enabling HTTP API on %s", *config.HTTPAPIAddr)
 		httpapi.Start(*config.HTTPAPIAddr, balancer)
 	}
 
