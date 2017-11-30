@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/coreos/go-systemd"
+  packages = ["activation"]
+  revision = "d2196463941895ee908e13531a23a39feb9e1243"
+  version = "v15"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -76,6 +82,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b52faacb4e9690b89905681d7ffb65339679322d625dc532a2c7cbd91f927358"
+  inputs-digest = "f5ba78d08145d8a780d84f6a489d7d595b3d4b9a78482448456818f1d271b3e1"
   solver-name = "gps-cdcl"
   solver-version = 1
