@@ -16,7 +16,7 @@ type Config struct {
 	BalancingMethod     *string            `yaml:"balancing_method" validate:"required"`
 	Healthcheck         *HealthcheckConfig `yaml:"healthcheck" validate:"required,dive"`
 	AccessLog           *AccessLogConfig   `yaml:"access_log"`
-	ErrorLog            *ErrorLogConfig    `yaml:"error_log" validate:"required,dive"`
+	Log                 *LogConfig         `yaml:"log" validate:"required,dive"`
 	ReadTimeout         *time.Duration     `yaml:"read_timeout"`
 	ReadHeaderTimeout   *time.Duration     `yaml:"read_header_timeout"`
 	WriteTimeout        *time.Duration     `yaml:"write_timeout"`
@@ -51,8 +51,9 @@ type AccessLogConfig struct {
 	Fields []string `yaml:"fields" validate:"required"`
 }
 
-type ErrorLogConfig struct {
-	Path *string `yaml:"path" validate:"required"`
+type LogConfig struct {
+	Path  *string `yaml:"path" validate:"required"`
+	Level *string `yaml:"level"`
 }
 
 func LoadConfigFromYAML(path string) (*Config, error) {

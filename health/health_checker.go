@@ -2,17 +2,17 @@ package health
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/ryotarai/simproxy/balancer"
 	"github.com/ryotarai/simproxy/types"
+	"github.com/sirupsen/logrus"
 )
 
 type HealthChecker struct {
 	State     HealthStateStore
-	Logger    *log.Logger
+	Logger    *logrus.Logger
 	Backend   *types.Backend
 	Balancer  balancer.Balancer
 	Interval  time.Duration
@@ -77,37 +77,37 @@ func (c *HealthChecker) onSuccess(msg string) {
 	if c.active {
 		if c.errorCount > 0 {
 			c.errorCount = 0
-			c.logf("success: %s", msg)
+			c.infof("success: %s", msg)
 		}
 		return
 	}
 
 	c.successCount++
-	c.logf("success %d/%d: %s", c.successCount, c.RiseCount, msg)
+	c.infof("success %d/%d: %s", c.successCount, c.RiseCount, msg)
 	if c.RiseCount <= c.successCount {
 		err := c.State.Mark(c.Backend.URL.String(), HEALTH_STATE_HEALTHY)
 		if err != nil {
-			c.logf("error: %s", err)
+			c.errorf("error: %s", err)
 		}
 		c.addToBalancer()
 	}
 }
 
 func (c *HealthChecker) addToBalancer() {
-	c.logf("adding to balancer")
+	c.infof("adding to balancer")
 	c.Balancer.AddBackend(c.Backend)
 	c.active = true
 }
 
 func (c *HealthChecker) onError(msg string) {
 	if !c.active {
-		c.logf("error: %s", msg)
+		c.warnf("error: %s", msg)
 		c.successCount = 0
 		return
 	}
 
 	c.errorCount++
-	c.logf("error %d/%d: %s", c.errorCount, c.FallCount, msg)
+	c.warnf("error %d/%d: %s", c.errorCount, c.FallCount, msg)
 	if c.FallCount <= c.errorCount {
 		c.State.Mark(c.Backend.URL.String(), HEALTH_STATE_DEAD)
 		c.removeFromBalancer()
@@ -115,13 +115,29 @@ func (c *HealthChecker) onError(msg string) {
 }
 
 func (c *HealthChecker) removeFromBalancer() {
-	c.logf("removing from balancer")
+	c.warnf("removing from balancer")
 	c.Balancer.RemoveBackend(c.Backend)
 	c.active = false
 }
 
-func (c *HealthChecker) logf(format string, args ...interface{}) {
+func (c *HealthChecker) logentry() *logrus.Entry {
+	return c.Logger.WithField("backendURL", c.Backend.URL.String()).WithField("healthcheckURL", c.Backend.HealthcheckURL.String())
+}
+
+func (c *HealthChecker) infof(format string, args ...interface{}) {
 	if c.Logger != nil {
-		c.Logger.Printf(fmt.Sprintf("[healthchecker] [%s] ", c.Backend.HealthcheckURL)+format, args...)
+		c.logentry().Infof(format, args...)
+	}
+}
+
+func (c *HealthChecker) warnf(format string, args ...interface{}) {
+	if c.Logger != nil {
+		c.logentry().Warnf(format, args...)
+	}
+}
+
+func (c *HealthChecker) errorf(format string, args ...interface{}) {
+	if c.Logger != nil {
+		c.logentry().Errorf(format, args...)
 	}
 }
