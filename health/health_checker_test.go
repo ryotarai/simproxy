@@ -22,6 +22,8 @@ func (s dummyHealthStateStore) Cleanup([]string) error {
 func (s dummyHealthStateStore) State(string) HealthState {
 	return HEALTH_STATE_UNKNOWN
 }
+func (s dummyHealthStateStore) Close() {
+}
 
 func TestCheck(t *testing.T) {
 	ts := testutil.NewTestServer()

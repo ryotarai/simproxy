@@ -23,18 +23,21 @@ type HealthStateStore interface {
 	Mark(string, HealthState) error
 	Cleanup([]string) error
 	State(string) HealthState
+	Close()
 }
 
 type HealthStateFileStore struct {
-	Path  string
-	state map[string]HealthState
-	mutex sync.Mutex
+	Path   string
+	state  map[string]HealthState
+	mutex  sync.Mutex
+	closed bool
 }
 
 func NewHealthStateFileStore(path string) *HealthStateFileStore {
 	return &HealthStateFileStore{
-		Path:  path,
-		mutex: sync.Mutex{},
+		Path:   path,
+		mutex:  sync.Mutex{},
+		closed: false,
 	}
 }
 
@@ -105,7 +108,15 @@ func (s *HealthStateFileStore) State(u string) HealthState {
 	return HEALTH_STATE_UNKNOWN
 }
 
+func (s *HealthStateFileStore) Close() {
+	s.closed = true
+}
+
 func (s *HealthStateFileStore) write() error {
+	if s.closed {
+		return nil
+	}
+
 	f, err := ioutil.TempFile("", "simproxy")
 	if err != nil {
 		return err
