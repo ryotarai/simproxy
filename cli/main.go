@@ -1,11 +1,14 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/ryotarai/simproxy/accesslogger"
@@ -218,8 +221,26 @@ func start(config *Config) {
 		httpapi.Start(*config.HTTPAPIAddr, balancer)
 	}
 
-	err = serveHTTPAndHandleSignal(server, listener, shutdownTimeout)
-	if err != nil {
-		logger.Fatal(err)
+	go func() {
+		server.Serve(listener)
+	}()
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGTERM)
+	<-sigCh
+
+	logger.Info("Shutting down...")
+
+	healthStore.Close()
+
+	ctx := context.Background()
+	if shutdownTimeout != time.Duration(0) {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, shutdownTimeout)
+		defer cancel()
+	}
+
+	if err := server.Shutdown(ctx); err != nil {
+		logger.WithField("err", err).Error("Error during shutting down")
 	}
 }
