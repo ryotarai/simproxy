@@ -77,7 +77,7 @@ func (c *HealthChecker) onSuccess(msg string) {
 	if c.active {
 		if c.errorCount > 0 {
 			c.errorCount = 0
-			c.infof("success: %s", msg)
+			c.infof("Healthcheck success: %s", msg)
 		}
 		return
 	}
@@ -87,27 +87,27 @@ func (c *HealthChecker) onSuccess(msg string) {
 	if c.RiseCount <= c.successCount {
 		err := c.State.Mark(c.Backend.URL.String(), HEALTH_STATE_HEALTHY)
 		if err != nil {
-			c.errorf("error: %s", err)
+			c.errorf("Healthcheck error: %s", err)
 		}
 		c.addToBalancer()
 	}
 }
 
 func (c *HealthChecker) addToBalancer() {
-	c.infof("adding to balancer")
+	c.infof("Healthchecker is adding a backend to balancer")
 	c.Balancer.AddBackend(c.Backend)
 	c.active = true
 }
 
 func (c *HealthChecker) onError(msg string) {
 	if !c.active {
-		c.warnf("error: %s", msg)
+		c.warnf("Healthcheck error: %s", msg)
 		c.successCount = 0
 		return
 	}
 
 	c.errorCount++
-	c.warnf("error %d/%d: %s", c.errorCount, c.FallCount, msg)
+	c.warnf("Healthcheck error %d/%d: %s", c.errorCount, c.FallCount, msg)
 	if c.FallCount <= c.errorCount {
 		c.State.Mark(c.Backend.URL.String(), HEALTH_STATE_DEAD)
 		c.removeFromBalancer()
@@ -115,7 +115,7 @@ func (c *HealthChecker) onError(msg string) {
 }
 
 func (c *HealthChecker) removeFromBalancer() {
-	c.warnf("removing from balancer")
+	c.warnf("Healthchecker is removing a backend from balancer")
 	c.Balancer.RemoveBackend(c.Backend)
 	c.active = false
 }
