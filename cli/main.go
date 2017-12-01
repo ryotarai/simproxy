@@ -229,6 +229,11 @@ func start(config *Config) {
 	signal.Notify(sigCh, syscall.SIGTERM)
 	<-sigCh
 
+	if d := config.ShutdownDelay; d != nil {
+		logger.Info("Waiting %s before shutting down...", *d)
+		time.Sleep(*d)
+	}
+
 	logger.Info("Shutting down...")
 
 	healthStore.Close()

@@ -74,3 +74,7 @@ enable_buffer_pool: false
 
 # http_api_addr: listen address for HTTP API endpoint
 http_api_addr: '127.0.0.1:8090'
+
+# shutdown_delay: delay shutting down
+#   This is useful for restarting gracefully by a software like server-starter
+shutdown_delay: 1s
