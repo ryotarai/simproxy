@@ -12,6 +12,7 @@ build.dummyhttp:
 
 crossbuild:
 	gox -ldflags "-X main.GitCommit=$(COMMIT)" -output "bin/v$(VERSION)/{{.Dir}}_{{.OS}}_{{.Arch}}_$(VERSION)" -arch "amd64" -os "linux darwin" .
+	shasum -a 256 bin/v$(VERSION)/*
 
 test:
 	go test -v $(shell go list ./... | grep -v /vendor/)
