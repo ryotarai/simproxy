@@ -230,7 +230,7 @@ func start(config *Config) {
 	<-sigCh
 
 	if d := config.ShutdownDelay; d != nil {
-		logger.Info("Waiting %s before shutting down...", *d)
+		logger.Infof("Waiting %s before shutting down...", *d)
 		time.Sleep(*d)
 	}
 
