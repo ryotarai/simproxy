@@ -29,8 +29,7 @@ type Config struct {
 	EnableBufferPool    bool               `yaml:"enable_buffer_pool"`
 	HTTPAPIAddr         *string            `yaml:"http_api_addr"`
 
-	EnableBackendTrace bool    `yaml:"enable_backend_trace"`
-	PprofAddr          *string `yaml:"pprof_addr"`
+	EnableBackendTrace bool `yaml:"enable_backend_trace"`
 }
 
 type HealthcheckConfig struct {

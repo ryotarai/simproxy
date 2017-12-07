@@ -85,14 +85,6 @@ func start(config *Config) {
 	logger := setupLogger(*config.Log.Path, config.Log.Level)
 	logger.Infof("Starting Simproxy v%s", Version)
 
-	if a := config.PprofAddr; a != nil {
-		l, err := listener.Listen(*a)
-		if err != nil {
-			logger.Fatal(err)
-		}
-		startPprofServer(l)
-	}
-
 	balancer, err := balancer.NewBalancer(*config.BalancingMethod)
 	if err != nil {
 		logger.Fatal(err)

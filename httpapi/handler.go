@@ -3,6 +3,7 @@ package httpapi
 import (
 	"fmt"
 	"net/http"
+	"net/http/pprof"
 
 	"github.com/ryotarai/simproxy/types"
 )
@@ -24,6 +25,16 @@ func NewHandler(b balancer) *Handler {
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/metrics" {
 		h.handleMetrics(w, r)
+	} else if r.URL.Path == "/debug/pprof/" {
+		pprof.Index(w, r)
+	} else if r.URL.Path == "/debug/pprof/cmdline" {
+		pprof.Cmdline(w, r)
+	} else if r.URL.Path == "/debug/pprof/profile" {
+		pprof.Profile(w, r)
+	} else if r.URL.Path == "/debug/pprof/symbol" {
+		pprof.Symbol(w, r)
+	} else if r.URL.Path == "/debug/pprof/trace" {
+		pprof.Trace(w, r)
 	} else {
 		w.WriteHeader(404)
 		fmt.Fprintln(w, "404 not found")
