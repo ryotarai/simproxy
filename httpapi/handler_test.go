@@ -54,7 +54,7 @@ func TestHandlerMetrics(t *testing.T) {
 	body := string(b)
 
 	assert.Nil(t, err)
-	assert.Contains(t, body, "simproxy_backend_weight{backend=http://example.com:8080/foo/} 123.000000\n")
-	assert.Contains(t, body, "simproxy_key1{backend=http://example.com:8080/foo/} 1\n")
-	assert.Contains(t, body, "simproxy_key2{backend=http://example.com:8080/foo/} 2\n")
+	assert.Contains(t, body, "simproxy_backend_weight{backend=\"http://example.com:8080/foo/\"} 123.000000\n")
+	assert.Contains(t, body, "simproxy_key1{backend=\"http://example.com:8080/foo/\"} 1\n")
+	assert.Contains(t, body, "simproxy_key2{backend=\"http://example.com:8080/foo/\"} 2\n")
 }
