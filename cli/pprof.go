@@ -1,11 +1,12 @@
 package cli
 
 import (
+	"net"
 	"net/http"
 	"net/http/pprof"
 )
 
-func startPprofServer(addr string) {
+func startPprofServer(l net.Listener) {
 	m := http.NewServeMux()
 	m.Handle("/debug/pprof/", http.HandlerFunc(pprof.Index))
 	m.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
@@ -14,10 +15,9 @@ func startPprofServer(addr string) {
 	m.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
 
 	s := &http.Server{
-		Addr:    addr,
 		Handler: m,
 	}
 	go func() {
-		s.ListenAndServe()
+		s.Serve(l)
 	}()
 }

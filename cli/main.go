@@ -85,8 +85,12 @@ func start(config *Config) {
 	logger := setupLogger(*config.Log.Path, config.Log.Level)
 	logger.Infof("Starting Simproxy v%s", Version)
 
-	if config.PprofAddr != nil {
-		startPprofServer(*config.PprofAddr)
+	if a := config.PprofAddr; a != nil {
+		l, err := listener.Listen(*a)
+		if err != nil {
+			logger.Fatal(err)
+		}
+		startPprofServer(l)
 	}
 
 	balancer, err := balancer.NewBalancer(*config.BalancingMethod)
@@ -205,24 +209,28 @@ func start(config *Config) {
 		server.WriteTimeout = *config.WriteTimeout
 	}
 
-	listener, err := listener.Listen(*config.Listen)
-	if err != nil {
-		logger.Fatal(err)
-	}
-	defer listener.Close()
-
 	var shutdownTimeout time.Duration
 	if config.ShutdownTimeout != nil {
 		shutdownTimeout = *config.ShutdownTimeout
 	}
 
-	if config.HTTPAPIAddr != nil {
-		logger.Infof("Enabling HTTP API on %s", *config.HTTPAPIAddr)
-		httpapi.Start(*config.HTTPAPIAddr, balancer)
+	if a := config.HTTPAPIAddr; a != nil {
+		logger.Infof("Enabling HTTP API on %s", *a)
+		l, err := listener.Listen(*a)
+		if err != nil {
+			logger.Fatal(err)
+		}
+		httpapi.Start(l, balancer)
 	}
 
+	l, err := listener.Listen(*config.Listen)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	defer l.Close()
+
 	go func() {
-		server.Serve(listener)
+		server.Serve(l)
 	}()
 
 	sigCh := make(chan os.Signal, 1)
